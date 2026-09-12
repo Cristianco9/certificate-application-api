@@ -2,7 +2,19 @@ import { CertificateRecipientServices } from '../../services/certificateRecipien
 import Boom from '@hapi/boom';
 
 /**
- * Retrieves a single certificate recipient by id.
+ * Controller function to retrieve a single certificate recipient by id.
+ *
+ * Extracts the recipient id from the request body, delegates lookup to
+ * CertificateRecipientServices, and returns the matching recipient.
+ * The rotated JWT is provided via res.locals.newUserToken by authAppVerifyToken.
+ *
+ * @param {Object} req - The Express request object.
+ * @param {Object} req.body - The validated request body.
+ * @param {number|string} req.body.id - Identifier of the certificate recipient to retrieve.
+ * @param {Object} res - The Express response object.
+ * @param {string} res.locals.newUserToken - The rotated JWT set by authAppVerifyToken.
+ * @param {Function} next - The next middleware function in the Express.js stack.
+ * @returns {Promise<void>} - Sends a JSON response with the matching recipient and the rotated token.
  */
 export const listOneCertificateRecipient = async (req, res, next) => {
   const { id } = req.body;
