@@ -3,7 +3,7 @@
 // and 'ñ', via the Unicode letter category \p{L}), digits, and spaces
 // (to allow values such as 'Liceo Femenino Nuestra Señora de
 // Chiquinquirá'),
-// and is between 3 to 50 characters long, matching the
+// and is between 3 to 100 characters long, matching the
 // VARCHAR(50) column size defined in institucion.nombre_institucion
 export const institutionName = /^[\p{L}\d ]{3,100}$/u;
 
