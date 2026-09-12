@@ -2,7 +2,19 @@ import { CertificateRecipientServices } from '../../services/certificateRecipien
 import Boom from '@hapi/boom';
 
 /**
- * Deletes a certificate recipient by id.
+ * Controller function to delete a certificate recipient by id.
+ *
+ * Extracts the recipient id from the request body, delegates deletion to
+ * CertificateRecipientServices, and responds according to the outcome.
+ * The rotated JWT is provided via res.locals.newUserToken by authAppVerifyToken.
+ *
+ * @param {Object} req - The Express request object.
+ * @param {Object} req.body - The validated request body.
+ * @param {number|string} req.body.id - Identifier of the certificate recipient to delete.
+ * @param {Object} res - The Express response object.
+ * @param {string} res.locals.newUserToken - The rotated JWT set by authAppVerifyToken.
+ * @param {Function} next - The next middleware function in the Express.js stack.
+ * @returns {Promise<void>} - Sends a JSON response with the operation result and the rotated token.
  */
 export const deleteOneCertificateRecipient = async (req, res, next) => {
   const { id } = req.body;
