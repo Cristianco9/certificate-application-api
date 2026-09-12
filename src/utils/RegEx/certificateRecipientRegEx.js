@@ -1,20 +1,39 @@
 // The pattern ensures the recipient first name contains only letters
 // (both uppercase and lowercase, including Spanish accented characters
 // and 'ñ', via the Unicode letter category \p{L}),
-// spaces (to allow compound first names such as 'Juan Carlos'),
+// with no spaces (a single given name),
 // and is between 3 to 50 characters long, matching the
 // VARCHAR(50) column size defined in
 // receptor_certificado.nombre_receptor_certificado
-export const certificateRecipientFirstName = /^[\p{L} ]{3,50}$/u;
+export const certificateRecipientFirstName = /^[\p{L}]{3,50}$/u;
+// The pattern ensures the recipient middle name, when provided,
+// contains only letters (both uppercase and lowercase, including
+// Spanish accented characters and 'ñ', via the Unicode letter
+// category \p{L}), with no spaces (a single given name), and is
+// between 3 to 50 characters long. This field is OPTIONAL: an empty
+// string is also accepted, since not every recipient has a middle
+// name, matching the VARCHAR(50) column size defined in
+// receptor_certificado.segundo_nombre_receptor_certificado
+export const certificateRecipientMiddleName = /^([\p{L}]{3,50})?$/u;
 
 // The pattern ensures the recipient last name contains only letters
 // (both uppercase and lowercase, including Spanish accented characters
 // and 'ñ', via the Unicode letter category \p{L}),
-// spaces (to allow compound last names such as 'García López'),
+// with no spaces (a single surname),
 // and is between 3 to 50 characters long, matching the
 // VARCHAR(50) column size defined in
 // receptor_certificado.apellidos_receptor_certificado
-export const certificateRecipientLastName = /^[\p{L} ]{3,50}$/u;
+export const certificateRecipientLastName = /^[\p{L}]{3,50}$/u;
+
+// The pattern ensures the recipient second last name, when provided,
+// contains only letters (both uppercase and lowercase, including
+// Spanish accented characters and 'ñ', via the Unicode letter
+// category \p{L}), with no spaces (a single surname), and is
+// between 3 to 50 characters long. This field is OPTIONAL: an empty
+// string is also accepted, since not every recipient has a second
+// last name, matching the VARCHAR(50) column size defined in
+// receptor_certificado.segundo_apellido_receptor_certificado
+export const certificateRecipientSecondLastName = /^([\p{L}]{3,50})?$/u;
 
 // The pattern ensures the recipient document number accepts either:
 // - a purely numeric Colombian national ID (cédula), 6 to 10 digits, or
