@@ -27,11 +27,23 @@ export const CertificateRecipient = sequelize.define(CERTIFICATE_RECIPIENT_TABLE
     allowNull: false,
     field: 'nombre_receptor_certificado',
   },
+  // Recipient middle name (optional)
+  middleName: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    field: 'segundo_nombre_receptor_certificado',
+  },
   // Recipient last name
   lastName: {
     type: DataTypes.STRING(50),
     allowNull: false,
     field: 'apellidos_receptor_certificado',
+  },
+  // Recipient second last name (optional)
+  secondLastName: {
+    type: DataTypes.STRING(50),
+    allowNull: true,
+    field: 'segundo_apellido_receptor_certificado',
   },
   // Foreign key to Document Type
   documentTypeId: {
