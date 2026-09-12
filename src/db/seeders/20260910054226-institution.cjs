@@ -16,9 +16,9 @@ module.exports = {
         email_institucion,
         nit_institucion
       ) VALUES (
-        'Institución educativa Nuestra Señora de Chiquinquirá',
+        'Institución Educativa Nuestra Señora de Chiquinquirá',
         '176622000076',
-        'Calle 4 # 5 - 38 Roldanillo',
+        'Calle 4 # 5 - 38',
         1083,
         'nuestraroldanillo@secvalledelcauca.gov.co',
         '891900837-2'
