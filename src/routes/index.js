@@ -16,6 +16,7 @@ import subjectRouter from "./subjectRouter.js";
 import studentRouter from "./studentRouter.js";
 import enrollmentRouter from "./enrollmentRouter.js";
 import userRouter from "./userRouter.js";
+import certificateRecipientRouter from "./certificateRecipient.js";
 import scoreRouter from "./scoreRouter.js";
 import phoneRouter from "./phoneRouter.js";
 
@@ -45,6 +46,7 @@ const routerApi = (app) => {
   router.use('/students', studentRouter);
   router.use('/enrollments', enrollmentRouter);
   router.use('/users', userRouter);
+  router.use('/certificate-recipients', certificateRecipientRouter);
   router.use('/scores', scoreRouter);
   router.use('/phones', phoneRouter);
 }

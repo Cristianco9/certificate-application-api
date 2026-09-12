@@ -5,7 +5,7 @@
 // Chiquinquirá'),
 // and is between 3 to 50 characters long, matching the
 // VARCHAR(50) column size defined in institucion.nombre_institucion
-export const institutionName = /^[\p{L}\d ]{3,50}$/u;
+export const institutionName = /^[\p{L}\d ]{3,100}$/u;
 
 // The pattern ensures the institutional code (DANE code, assigned by the
 // Ministry of Education) accepts uppercase letters and digits only,

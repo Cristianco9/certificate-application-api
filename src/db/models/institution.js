@@ -23,7 +23,7 @@ export const Institution = sequelize.define(INSTITUTION_TABLE, {
   },
   // Institution name
   name: {
-    type: DataTypes.STRING(50),
+    type: DataTypes.STRING(100),
     allowNull: false,
     unique: true,
     field: 'nombre_institucion',
