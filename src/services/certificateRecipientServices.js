@@ -17,7 +17,9 @@ export class CertificateRecipientServices {
    *
    * @param {Object} newCertificateRecipient
    * @param {string} newCertificateRecipient.firstName
+   * @param {string} [newCertificateRecipient.middleName]
    * @param {string} newCertificateRecipient.lastName
+   * @param {string} [newCertificateRecipient.secondLastName]
    * @param {number|string} newCertificateRecipient.documentTypeId
    * @param {string} newCertificateRecipient.documentNumber
    * @param {string} newCertificateRecipient.address
@@ -36,7 +38,9 @@ export class CertificateRecipientServices {
 
       await CertificateRecipient.create({
         firstName: normalized.firstName,
+        middleName: normalized.middleName,
         lastName: normalized.lastName,
+        secondLastName: normalized.secondLastName,
         documentTypeId: normalized.documentTypeId,
         documentNumber: normalized.documentNumber,
         address: normalized.address,
@@ -82,7 +86,9 @@ export class CertificateRecipientServices {
 
       const updateData = {};
       if (normalized.firstName !== undefined) updateData.firstName = normalized.firstName;
+      if (normalized.middleName !== undefined) updateData.middleName = normalized.middleName;
       if (normalized.lastName !== undefined) updateData.lastName = normalized.lastName;
+      if (normalized.secondLastName !== undefined) updateData.secondLastName = normalized.secondLastName;
       if (normalized.documentTypeId !== undefined) updateData.documentTypeId = normalized.documentTypeId;
       if (normalized.documentNumber !== undefined) updateData.documentNumber = normalized.documentNumber;
       if (normalized.address !== undefined) updateData.address = normalized.address;
@@ -174,7 +180,7 @@ export class CertificateRecipientServices {
   async listAll() {
     try {
       const allRecipients = await CertificateRecipient.findAll({
-        order: [['lastName', 'ASC'], ['firstName', 'ASC']],
+        order: [['id_receptor_certificado', 'ASC']],
         include: CertificateRecipientServices.DOCUMENT_TYPE_INCLUDE,
       });
 
@@ -186,8 +192,8 @@ export class CertificateRecipientServices {
   }
 
   /**
-   * Searches certificate recipients whose first or last name partially
-   * matches the given text.
+   * Searches certificate recipients whose first, middle, last, or second
+   * last name partially matches the given text.
    *
    * @param {string} partialName
    * @returns {Promise<Object[]>}
@@ -202,7 +208,9 @@ export class CertificateRecipientServices {
         where: {
           [Op.or]: [
             { firstName: { [Op.like]: `%${partialName}%` } },
+            { middleName: { [Op.like]: `%${partialName}%` } },
             { lastName: { [Op.like]: `%${partialName}%` } },
+            { secondLastName: { [Op.like]: `%${partialName}%` } },
           ],
         },
         order: [['lastName', 'ASC'], ['firstName', 'ASC']],
@@ -322,7 +330,9 @@ export class CertificateRecipientServices {
     };
 
     if (data.firstName !== undefined) normalized.firstName = normalizeString(data.firstName);
+    if (data.middleName !== undefined) normalized.middleName = normalizeString(data.middleName);
     if (data.lastName !== undefined) normalized.lastName = normalizeString(data.lastName);
+    if (data.secondLastName !== undefined) normalized.secondLastName = normalizeString(data.secondLastName);
     if (data.documentNumber !== undefined) normalized.documentNumber = normalizeString(data.documentNumber);
     if (data.address !== undefined) normalized.address = normalizeString(data.address);
     if (data.documentTypeId !== undefined) normalized.documentTypeId = normalizeId(data.documentTypeId);
