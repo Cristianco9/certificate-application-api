@@ -3,7 +3,9 @@ import Joi from 'joi';
 import {
   certificateRecipientId,
   certificateRecipientFirstName,
+  certificateRecipientMiddleName,
   certificateRecipientLastName,
+  certificateRecipientSecondLastName,
   certificateRecipientDocumentNumber,
   certificateRecipientAddress,
   certificateRecipientDocumentTypeId,
@@ -16,12 +18,25 @@ const joiId = Joi.string().pattern(certificateRecipientId).messages({
 
 const joiFirstName = Joi.string().pattern(certificateRecipientFirstName).messages({
   'string.base': 'El nombre del receptor debe ser una cadena de texto.',
-  'string.pattern.base': 'El nombre del receptor debe tener entre 3 y 50 caracteres y contener solo letras y espacios.',
+  'string.pattern.base': 'El nombre del receptor debe tener entre 3 y 50 caracteres y contener solo letras.',
+});
+
+// Optional: empty string is allowed when the recipient has no middle name
+const joiMiddleName = Joi.string().pattern(certificateRecipientMiddleName).allow('').messages({
+  'string.base': 'El segundo nombre del receptor debe ser una cadena de texto.',
+  'string.pattern.base': 'El segundo nombre del receptor debe tener entre 3 y 50 caracteres y contener solo letras y espacios, o estar vacío.',
 });
 
 const joiLastName = Joi.string().pattern(certificateRecipientLastName).messages({
   'string.base': 'Los apellidos del receptor deben ser una cadena de texto.',
-  'string.pattern.base': 'Los apellidos del receptor deben tener entre 3 y 50 caracteres y contener solo letras y espacios.',
+  'string.pattern.base': 'Los apellidos del receptor deben tener entre 3 y 50 caracteres y contener solo letras.',
+});
+
+
+// Optional: empty string is allowed when the recipient has no second last name
+const joiSecondLastName = Joi.string().pattern(certificateRecipientSecondLastName).allow('').messages({
+  'string.base': 'El segundo apellido del receptor debe ser una cadena de texto.',
+  'string.pattern.base': 'El segundo apellido del receptor debe tener entre 3 y 50 caracteres y contener solo letras y espacios, o estar vacío.',
 });
 
 const joiDocumentNumber = Joi.string().pattern(certificateRecipientDocumentNumber).messages({
@@ -61,24 +76,28 @@ export const certificateRecipientSchema = {
     documentTypeId: joiDocumentTypeId.required(),
   }),
 
-  // POST /create (body: { firstName, lastName, documentTypeId, documentNumber, address })
+  // POST /create (body: { firstName, middleName?, lastName, secondLastName?, documentTypeId, documentNumber, address })
   newCertificateRecipientData: Joi.object({
     firstName: joiFirstName.required(),
+    middleName: joiMiddleName.optional(),
     lastName: joiLastName.required(),
+    secondLastName: joiSecondLastName.optional(),
     documentTypeId: joiDocumentTypeId.required(),
     documentNumber: joiDocumentNumber.required(),
     address: joiAddress.required(),
   }),
 
-  // PATCH /update (body: { id, firstName?, lastName?, documentTypeId?, documentNumber?, address? })
+  // PATCH /update (body: { id, firstName?, middleName?, lastName?, secondLastName?, documentTypeId?, documentNumber?, address? })
   updateCertificateRecipientData: Joi.object({
     id: joiId.required(),
     firstName: joiFirstName,
+    middleName: joiMiddleName,
     lastName: joiLastName,
+    secondLastName: joiSecondLastName,
     documentTypeId: joiDocumentTypeId,
     documentNumber: joiDocumentNumber,
     address: joiAddress,
-  }).or('firstName', 'lastName', 'documentTypeId', 'documentNumber', 'address').messages({
+  }).or('firstName', 'middleName', 'lastName', 'secondLastName', 'documentTypeId', 'documentNumber', 'address').messages({
     'object.missing': 'Debe proporcionar al menos un campo para actualizar el receptor del certificado.',
   }),
 
