@@ -24,10 +24,22 @@ module.exports = {
         allowNull: false,
       },
 
+      // Recipient middle name (optional)
+      segundo_nombre_receptor_certificado: {
+        type: Sequelize.STRING(50),
+        allowNull: true,
+      },
+
       // Recipient last name
       apellidos_receptor_certificado: {
         type: Sequelize.STRING(50),
         allowNull: false,
+      },
+
+      // Recipient second last name (optional)
+      segundo_apellido_receptor_certificado: {
+        type: Sequelize.STRING(50),
+        allowNull: true,
       },
 
       // Foreign key to tipo_documento — RESTRICT on delete
