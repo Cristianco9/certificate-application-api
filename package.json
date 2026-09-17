@@ -1,7 +1,7 @@
 {
-  "name": "certificate-application",
+  "name": "certificate-application-api",
   "version": "0.1.8",
-  "description": "Web application to generate academic certification",
+  "description": "RESTful backend API for the Historical Academic Certificate Management System",
   "main": "src/app.js",
   "type": "module",
   "scripts": {
