@@ -10,8 +10,8 @@ export const config = {
   env: process.env.NODE_ENV || 'dev',
   // Database dialect (default to 'mysql' if not specified)
   dialect: process.env.DIALECT || 'mysql',
-  // Application port (default to 3030 if not specified)
-  appPort: process.env.APP_PORT || 3030,
+  // Application port
+  appPort: process.env.APP_PORT,
   // Database user name from environment variables (single app user, not root)
   dbUser: process.env.DB_USER,
   // Database user password from environment variables
