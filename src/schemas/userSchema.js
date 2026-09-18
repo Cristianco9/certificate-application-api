@@ -128,15 +128,6 @@ export const userSchema = {
 
   // GET /users/list-all → no input parameters, no schema applied.
 
-  // POST /users/login (body: { credentials: { username, password } })
-  // Validates the login credentials against UserServices.login(username, password).
-  loginCredentials: Joi.object({
-    credentials: Joi.object({
-      username: joiUsername.required(),
-      password: joiPassword.required(),
-    }).required(),
-  }),
-
   // POST /users (body: { username, firstName, lastName, documentTypeId, documentNumber,
   // municipalityId, roleId, academicLevelId, email, status, password, genderId, lastLogin? })
   // Validates UserServices.createOne(newUser). All fields except lastLogin are required.
@@ -186,7 +177,22 @@ export const userSchema = {
     'object.missing': 'Debe proporcionar al menos un campo para actualizar el usuario.',
   }),
 
-  // POST /users/reset-password (body: { email, documentNumber, newPassword })
+  // DELETE /users (body: { id })
+  // Validates UserServices.deleteOne(userId)
+  deleteUser: Joi.object({
+    id: joiId.required(),
+  }),
+
+  // POST /auth/login (body: { credentials: { username, password } })
+  // Validates the login credentials against UserServices.login(username, password).
+  loginCredentials: Joi.object({
+    credentials: Joi.object({
+      username: joiUsername.required(),
+      password: joiPassword.required(),
+    }).required(),
+  }),
+
+  // POST /auth/reset-password (body: { email, documentNumber, newPassword })
   // Validates UserServices.resetPassword(email, documentNumber, newPassword).
   // Used by a user who cannot log in and does not remember their current
   // password. No session/token is involved: identity is verified by matching
@@ -197,11 +203,4 @@ export const userSchema = {
     documentNumber: joiDocumentNumber.required(),
     newPassword: joiPassword.required(),
   }),
-
-  // DELETE /users (body: { id })
-  // Validates UserServices.deleteOne(userId)
-  deleteUser: Joi.object({
-    id: joiId.required(),
-  }),
-
 };
