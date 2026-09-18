@@ -2,6 +2,7 @@
 import { Router } from "express";
 
 // Import the Services Routes for handle services related-routes
+import authenticationRouter from "./authenticationRouter.js";
 import academicLevelRouter from "./academicLevelRouter.js";
 import genderRouter from "./genderRouter.js";
 import roleRouter from "./roleRouter.js";
@@ -32,6 +33,7 @@ const routerApi = (app) => {
   app.use('/app/v1', router);
 
   // Catalog of the sub-routes
+  router.use('/auth', authenticationRouter);
   router.use('/academic-levels', academicLevelRouter);
   router.use('/genders', genderRouter);
   router.use('/roles', roleRouter);
