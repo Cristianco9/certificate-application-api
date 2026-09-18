@@ -13,6 +13,7 @@ import { userSchema } from '../schemas/userSchema.js';
 // ── Controllers ─────────────────────────────────────────────────────────────
 
 import { login } from '../controllers/authentication/login.js';
+import { getCurrentUser } from '../controllers/authentication/me.js';
 import { resetPassword } from '../controllers/authentication/resetPassword.js';
 
 // Create a new Router instance dedicated to the user resource
@@ -27,6 +28,24 @@ authenticationRouter.post(
   checkApiKey,
   validatorHandler(userSchema.loginCredentials, 'body'),
   login
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /me  →  Return the currently authenticated user's identity (id + role)
+// Body: {} (no payload; identity is derived entirely from the verified JWT)
+//
+// Unlike /login and /reset-password, this endpoint REQUIRES an active
+// session, so it runs through authAppVerifyToken. It deliberately does
+// NOT run through checkRole: every authenticated user must be able to
+// ask "who am I and what role do I have?" so the frontend can gate UI
+// correctly. The role value returned is the raw JWT claim — one of
+// 'Máster', 'Auxiliar', 'Administrador', 'Funcionario', 'Rector'.
+// ─────────────────────────────────────────────────────────────────────────────
+authenticationRouter.get(
+  '/me',
+  checkApiKey,
+  authAppVerifyToken,
+  getCurrentUser
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
