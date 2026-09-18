@@ -1,3 +1,13 @@
+/**
+ * @module services/userServices
+ * @description Service layer for user CRUD operations.
+ *
+ * Handles user creation, update, deletion, and retrieval. Retrieval methods
+ * eagerly load related catalog records (role, document type, municipality,
+ * academic level, gender) and format them as nested `{ id, name }` objects
+ * instead of raw foreign-key ids. Password hashes are never returned.
+ */
+
 // import the user data model
 import { User } from '../db/models/user.js';
 // import the related catalog models needed to embed FK data as nested objects
@@ -8,53 +18,43 @@ import { AcademicLevel } from '../db/models/academicLevel.js';
 import { Gender } from '../db/models/gender.js';
 // import the promise to encrypt the user's password
 import { hashPassword } from '../utils/auth/passwordHash.js';
-// import the module to sign a JWT
-import { signUserToken } from '../utils/auth/tokenSign.js';
-// bcrypt takes care of hashing the user's password
-import bcrypt from 'bcryptjs';
 // boom allows managing possible errors
 import Boom from '@hapi/boom';
-// import the configuration module
-import { config } from '../config/config.js'
 
-// create the user services class
+/**
+ * Service class for managing users.
+ *
+ * Provides methods to create, update, delete, and retrieve users. It also
+ * centralizes password hashing, username uniqueness validation, catalog
+ * relation embedding, and consistent Boom error handling.
+ *
+ * @class UserServices
+ */
 export class UserServices {
 
-  async login(username, password) {
-
-    try {
-      const userRecord = await User.findOne({ where: { username } });
-
-      if (!userRecord) {
-        return { status: 'user not found' };
-      }
-
-      const validPassword = await bcrypt.compare(password, userRecord.password);
-
-      if (!validPassword) {
-        return { status: 'wrong password' };
-      }
-
-      await User.update(
-        { lastLogin: new Date() },
-        { where: { id: userRecord.id } }
-      );
-
-      const role = await Role.findOne({ where: { id: userRecord.roleId } });
-
-      const userToken = signUserToken(
-        { id: userRecord.id, role: role.name },
-        config.authAppJwtKey,
-        '1h'
-      );
-
-      return { status: 'logged', token: userToken };
-
-    } catch (error) {
-      throw Boom.boomify(error, { message: 'Unable to verify user credentials' });
-    }
-  }
-
+  /**
+   * Creates a new user after verifying that the username is unique and
+   * hashing the supplied password.
+   *
+   * @async
+   * @param {Object} newUser - User creation payload.
+   * @param {string} newUser.username - Unique username.
+   * @param {string} newUser.password - Plain-text password to be hashed.
+   * @param {string} newUser.firstName - User first name.
+   * @param {string} newUser.lastName - User last name.
+   * @param {number} newUser.documentTypeId - FK to the document type catalog.
+   * @param {string} newUser.documentNumber - User document number.
+   * @param {number} newUser.municipalityId - FK to the municipality catalog.
+   * @param {number} newUser.roleId - FK to the role catalog.
+   * @param {number} newUser.academicLevelId - FK to the academic level catalog.
+   * @param {string} newUser.email - User email address.
+   * @param {string} newUser.status - User status.
+   * @param {number} newUser.genderId - FK to the gender catalog.
+   * @param {Date} [newUser.lastLogin] - Last login date. Defaults to the current date.
+   * @returns {Promise<{ status: string }>} Result object with a success status message.
+   * @throws {Boom} Throws `Boom.conflict` if the username already exists, or a
+   * wrapped Boom error if user creation fails.
+   */
   async createOne(newUser) {
 
     try {
@@ -91,6 +91,30 @@ export class UserServices {
     }
   }
 
+  /**
+   * Updates an existing user by id.
+   *
+   * Password and last login are intentionally not updated by this method.
+   *
+   * @async
+   * @param {number} userId - Id of the user to update.
+   * @param {Object} newUserData - Fields to update.
+   * @param {string} newUserData.username - Username.
+   * @param {string} newUserData.firstName - User first name.
+   * @param {string} newUserData.lastName - User last name.
+   * @param {number} newUserData.documentTypeId - FK to the document type catalog.
+   * @param {string} newUserData.documentNumber - User document number.
+   * @param {number} newUserData.municipalityId - FK to the municipality catalog.
+   * @param {number} newUserData.roleId - FK to the role catalog.
+   * @param {number} newUserData.academicLevelId - FK to the academic level catalog.
+   * @param {string} newUserData.email - User email address.
+   * @param {string} newUserData.status - User status.
+   * @param {number} newUserData.genderId - FK to the gender catalog.
+   * @returns {Promise<{ status: string }>} Result object with a success status message.
+   * @throws {Boom} Throws `Boom.badRequest` if no data is provided,
+   * `Boom.notFound` if the user does not exist, or a wrapped Boom error if
+   * the update fails.
+   */
   async updateOne(userId, newUserData) {
 
     if (!newUserData) {
@@ -133,56 +157,15 @@ export class UserServices {
   }
 
   /**
-   * Resets a user's password when they can't log in and don't remember
-   * their current password. Since the user isn't authenticated, this
-   * does NOT verify the old password (there's nothing to compare
-   * against from their side). Instead, it verifies identity using two
-   * independent unique fields the user should know — email and document
-   * number — before allowing the password to be replaced. No token is
-   * issued or verified here: once the password is updated, the user
-   * simply logs in again with their new password through the normal
-   * login() flow.
+   * Deletes a user by id.
    *
-   * @param {string} email - The user's registered email.
-   * @param {string} documentNumber - The user's registered document number.
-   * @param {string} newPassword - The new plain-text password to set.
-   * @returns {Promise<{status: string}>}
+   * @async
+   * @param {number} userId - Id of the user to delete.
+   * @returns {Promise<{ status: string }>} Result object with a success status message.
+   * @throws {Boom} Throws `Boom.badRequest` if no user ID is provided,
+   * `Boom.notFound` if the user does not exist, or a wrapped Boom error if
+   * deletion fails.
    */
-  async resetPassword(email, documentNumber, newPassword) {
-
-    if (!email || !documentNumber || !newPassword) {
-      throw Boom.badRequest('Email, document number, and a new password must all be provided');
-    }
-
-    try {
-      const existingUser = await User.findOne({
-        where: { email, documentNumber }
-      });
-
-      if (!existingUser) {
-        throw Boom.notFound('No user was found matching the provided email and document number');
-      }
-
-      const isSameAsOld = await bcrypt.compare(newPassword, existingUser.password);
-
-      if (isSameAsOld) {
-        throw Boom.badRequest('The new password must be different from the previous password');
-      }
-
-      const hash = await hashPassword(newPassword);
-
-      await User.update(
-        { password: hash },
-        { where: { id: existingUser.id } }
-      );
-
-      return { status: 'PASSWORD RESET SUCCESSFULLY' };
-
-    } catch (error) {
-      throw Boom.boomify(error, { message: 'Unable to reset the password' });
-    }
-  }
-
   async deleteOne(userId) {
 
     if (!userId) {
@@ -206,10 +189,14 @@ export class UserServices {
   /**
    * Retrieves a single user by id, embedding its foreign-key catalog
    * records (document type, municipality, role, academic level, gender)
-   * as nested { id, name } objects instead of raw FK integers.
+   * as nested `{ id, name }` objects instead of raw FK integers.
    *
+   * @async
    * @param {number} userId - The id of the user to retrieve.
-   * @returns {Promise<Object>} - The formatted user record.
+   * @returns {Promise<Object>} The formatted user record.
+   * @throws {Boom} Throws `Boom.badRequest` if no user ID is provided,
+   * `Boom.notFound` if the user does not exist, or a wrapped Boom error if
+   * the lookup fails.
    */
   async listOne(userId) {
 
@@ -236,9 +223,11 @@ export class UserServices {
 
   /**
    * Retrieves every user, ordered by id ascending, embedding each
-   * user's foreign-key catalog records as nested { id, name } objects.
+   * user's foreign-key catalog records as nested `{ id, name }` objects.
    *
-   * @returns {Promise<Object[]>} - The formatted list of user records.
+   * @async
+   * @returns {Promise<Object[]>} The formatted list of user records.
+   * @throws {Boom} Throws a wrapped Boom error if the lookup fails.
    */
   async listAll() {
 
@@ -260,11 +249,12 @@ export class UserServices {
   // ==========================================================
 
   /**
-   * The set of Sequelize includes shared by listOne/listAll to embed
-   * each foreign-key catalog record as its full row (id + name), so the
+   * The set of Sequelize includes shared by `listOne` and `listAll` to embed
+   * each foreign-key catalog record as its full row (`id` + `name`), so the
    * response can be reshaped into nested objects rather than bare FK ids.
    *
    * @static
+   * @type {Array<Object>}
    */
   static CATALOG_INCLUDES = [
     { model: DocumentType, as: 'documentType', attributes: ['id', 'name'] },
@@ -276,15 +266,16 @@ export class UserServices {
 
   /**
    * Reshapes a User Sequelize instance (with its catalog associations
-   * eagerly loaded via CATALOG_INCLUDES) into a plain object where the
-   * raw FK ids (documentTypeId, municipalityId, roleId, academicLevelId,
-   * genderId) are replaced by nested { id, name } objects. Also strips
-   * the password hash, since none of these responses should ever leak it.
+   * eagerly loaded via `CATALOG_INCLUDES`) into a plain object where the
+   * raw FK ids (`documentTypeId`, `municipalityId`, `roleId`,
+   * `academicLevelId`, `genderId`) are replaced by nested `{ id, name }`
+   * objects. Also strips the password hash, since none of these responses
+   * should ever leak it.
    *
    * @private
    * @static
    * @param {User} user - The Sequelize User instance to format.
-   * @returns {Object} - The formatted, plain user object.
+   * @returns {Object} The formatted, plain user object.
    */
   static _formatUser(user) {
     const {
