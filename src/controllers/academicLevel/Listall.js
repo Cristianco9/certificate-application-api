@@ -25,19 +25,17 @@ export const listAllAcademicLevels = async (req, res, next) => {
 
   try {
     // Attempt to retrieve all academic levels
-    const allAcademicLevels = await academicLevelManager.listAll();
+    const { total, records } = await academicLevelManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Niveles académicos encontrados exitosamente',
-      academicLevels: allAcademicLevels,
+      total,
+      academicLevels: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });
   } catch (error) {
-    // AcademicLevelServices already throws boomified errors; boomify()
-    // passes those through untouched and only defaults unexpected
-    // errors to a 500.
     const boomError = Boom.boomify(error, {
       message: 'No es posible encontrar los niveles académicos',
     });

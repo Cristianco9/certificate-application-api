@@ -213,7 +213,9 @@ export class AcademicLevelServices {
   /**
    * Retrieves all academic level records, ordered alphabetically by name.
    *
-   * @returns {Promise<AcademicLevel[]>} - The list of academic level records.
+   * @returns {Promise<{total: number, records: AcademicLevel[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -222,7 +224,10 @@ export class AcademicLevelServices {
         order: [['name', 'ASC']]
       });
 
-      return allAcademicLevels;
+      return {
+        total: allAcademicLevels.length,
+        records: allAcademicLevels,
+      };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the academic levels' });
