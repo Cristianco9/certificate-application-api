@@ -28,12 +28,13 @@ export const listDepartmentsByPartialName = async (req, res, next) => {
 
   try {
     // Attempt to find departments matching the partial name
-    const matchingDepartments = await departmentManager.listByPartialName(partialName);
+    const { total, records } = await departmentManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Departamentos encontrados exitosamente',
-      departments: matchingDepartments,
+      total,
+      departments: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

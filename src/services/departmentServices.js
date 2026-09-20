@@ -239,7 +239,9 @@ export class DepartmentServices {
    * Retrieves all department records, ordered alphabetically by name,
    * each with its parent country embedded as a nested { id, name } object.
    *
-   * @returns {Promise<Object[]>} - The formatted list of department records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -249,7 +251,9 @@ export class DepartmentServices {
         include: DepartmentServices.COUNTRY_INCLUDE,
       });
 
-      return allDepartments.map(DepartmentServices._formatDepartment);
+      const records = allDepartments.map(DepartmentServices._formatDepartment);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the departments' });
@@ -263,7 +267,8 @@ export class DepartmentServices {
    * context.md (e.g. 'Nombre parcial').
    *
    * @param {string} partialName - The partial name to search for.
-   * @returns {Promise<Object[]>} - The formatted, matching department records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
 
@@ -280,7 +285,9 @@ export class DepartmentServices {
         include: DepartmentServices.COUNTRY_INCLUDE,
       });
 
-      return matchingDepartments.map(DepartmentServices._formatDepartment);
+      const records = matchingDepartments.map(DepartmentServices._formatDepartment);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the departments' });
@@ -293,7 +300,8 @@ export class DepartmentServices {
    * for cascading selects in the UI (e.g. country -> department -> municipality).
    *
    * @param {number} countryId - The id of the country.
-   * @returns {Promise<Object[]>} - The formatted, matching department records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByCountry(countryId) {
 
@@ -308,7 +316,9 @@ export class DepartmentServices {
         include: DepartmentServices.COUNTRY_INCLUDE,
       });
 
-      return departmentsByCountry.map(DepartmentServices._formatDepartment);
+      const records = departmentsByCountry.map(DepartmentServices._formatDepartment);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the departments for the given country' });

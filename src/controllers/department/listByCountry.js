@@ -28,12 +28,13 @@ export const listDepartmentsByCountry = async (req, res, next) => {
 
   try {
     // Attempt to find departments belonging to the given country
-    const departmentsByCountry = await departmentManager.listByCountry(countryId);
+    const { total, records } = await departmentManager.listByCountry(countryId);
 
     return res.status(200).json({
       success: true,
       message: 'Departamentos encontrados exitosamente',
-      departments: departmentsByCountry,
+      total,
+      departments: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });
