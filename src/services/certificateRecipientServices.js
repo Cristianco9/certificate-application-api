@@ -175,7 +175,9 @@ export class CertificateRecipientServices {
   /**
    * Retrieves all certificate recipients ordered by last name and first name.
    *
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
     try {
@@ -184,7 +186,9 @@ export class CertificateRecipientServices {
         include: CertificateRecipientServices.DOCUMENT_TYPE_INCLUDE,
       });
 
-      return allRecipients.map(CertificateRecipientServices._formatCertificateRecipient);
+      const records = allRecipients.map(CertificateRecipientServices._formatCertificateRecipient);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the certificate recipients' });
@@ -196,7 +200,8 @@ export class CertificateRecipientServices {
    * last name partially matches the given text.
    *
    * @param {string} partialName
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
     if (!partialName) {
@@ -217,7 +222,9 @@ export class CertificateRecipientServices {
         include: CertificateRecipientServices.DOCUMENT_TYPE_INCLUDE,
       });
 
-      return matchingRecipients.map(CertificateRecipientServices._formatCertificateRecipient);
+      const records = matchingRecipients.map(CertificateRecipientServices._formatCertificateRecipient);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the certificate recipients' });
@@ -256,7 +263,8 @@ export class CertificateRecipientServices {
    * Retrieves all certificate recipients matching a given document type.
    *
    * @param {number|string} documentTypeId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByDocumentType(documentTypeId) {
     if (!documentTypeId) {
@@ -270,13 +278,14 @@ export class CertificateRecipientServices {
         include: CertificateRecipientServices.DOCUMENT_TYPE_INCLUDE,
       });
 
-      return recipients.map(CertificateRecipientServices._formatCertificateRecipient);
+      const records = recipients.map(CertificateRecipientServices._formatCertificateRecipient);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find certificate recipients for the given document type' });
     }
   }
-
   // Private helpers
 
   async _findById(certificateRecipientId) {

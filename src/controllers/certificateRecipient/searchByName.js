@@ -21,12 +21,13 @@ export const searchCertificateRecipientsByName = async (req, res, next) => {
   const certificateRecipientManager = new CertificateRecipientServices();
 
   try {
-    const matchingCertificateRecipients = await certificateRecipientManager.listByPartialName(partialName);
+    const { total, records } = await certificateRecipientManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de receptores del certificado realizada exitosamente',
-      certificateRecipients: matchingCertificateRecipients,
+      total,
+      certificateRecipients: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

@@ -21,12 +21,13 @@ export const listCertificateRecipientsByDocumentType = async (req, res, next) =>
   const certificateRecipientManager = new CertificateRecipientServices();
 
   try {
-    const certificateRecipients = await certificateRecipientManager.listByDocumentType(documentTypeId);
+    const { total, records } = await certificateRecipientManager.listByDocumentType(documentTypeId);
 
     return res.status(200).json({
       success: true,
       message: 'Receptores del certificado encontrados exitosamente',
-      certificateRecipients,
+      total,
+      certificateRecipients: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

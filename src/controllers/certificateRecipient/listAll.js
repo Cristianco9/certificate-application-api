@@ -17,12 +17,13 @@ export const listAllCertificateRecipients = async (req, res, next) => {
   const certificateRecipientManager = new CertificateRecipientServices();
 
   try {
-    const allCertificateRecipients = await certificateRecipientManager.listAll();
+    const { total, records } = await certificateRecipientManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Receptores del certificado encontrados exitosamente',
-      certificateRecipients: allCertificateRecipients,
+      total,
+      certificateRecipients: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {
