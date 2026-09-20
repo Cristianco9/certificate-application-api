@@ -289,7 +289,9 @@ export class ScoreServices {
    * Retrieves all score records, ordered by id, each with its related
    * subject and enrollment embedded as nested objects.
    *
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -299,7 +301,9 @@ export class ScoreServices {
         include: ScoreServices.CATALOG_INCLUDES,
       });
 
-      return allScores.map(ScoreServices._formatScore);
+      const records = allScores.map(ScoreServices._formatScore);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the scores' });
@@ -312,7 +316,8 @@ export class ScoreServices {
    * different enrollments).
    *
    * @param {number} subjectId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listBySubject(subjectId) {
 
@@ -327,7 +332,9 @@ export class ScoreServices {
         include: ScoreServices.CATALOG_INCLUDES,
       });
 
-      return scoresBySubject.map(ScoreServices._formatScore);
+      const records = scoresBySubject.map(ScoreServices._formatScore);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the scores for the given subject' });
@@ -342,7 +349,8 @@ export class ScoreServices {
    * académicas').
    *
    * @param {number} enrollmentId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByEnrollment(enrollmentId) {
 
@@ -357,7 +365,9 @@ export class ScoreServices {
         include: ScoreServices.CATALOG_INCLUDES,
       });
 
-      return scoresByEnrollment.map(ScoreServices._formatScore);
+      const records = scoresByEnrollment.map(ScoreServices._formatScore);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the scores for the given enrollment' });

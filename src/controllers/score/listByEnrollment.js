@@ -22,12 +22,13 @@ export const listScoresByEnrollment = async (req, res, next) => {
   const scoreManager = new ScoreServices();
 
   try {
-    const scores = await scoreManager.listByEnrollment(enrollmentId);
+    const { total, records } = await scoreManager.listByEnrollment(enrollmentId);
 
     return res.status(200).json({
       success: true,
       message: 'Calificaciones encontradas exitosamente',
-      scores,
+      total,
+      scores: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

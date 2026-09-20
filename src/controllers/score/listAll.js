@@ -18,12 +18,13 @@ export const listAllScores = async (req, res, next) => {
   const scoreManager = new ScoreServices();
 
   try {
-    const allScores = await scoreManager.listAll();
+    const { total, records } = await scoreManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Calificaciones encontradas exitosamente',
-      scores: allScores,
+      total,
+      scores: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {
