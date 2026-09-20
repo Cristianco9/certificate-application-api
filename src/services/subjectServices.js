@@ -195,7 +195,9 @@ export class SubjectServices {
   /**
    * Retrieves all subject records, ordered alphabetically by name.
    *
-   * @returns {Promise<Subject[]>} - The list of subject records.
+   * @returns {Promise<{total: number, records: Subject[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -204,7 +206,7 @@ export class SubjectServices {
         order: [['name', 'ASC']]
       });
 
-      return allSubjects;
+      return { total: allSubjects.length, records: allSubjects };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the subjects' });
@@ -217,7 +219,8 @@ export class SubjectServices {
    * context.md (e.g. 'Nombre parcial').
    *
    * @param {string} partialName - The partial name to search for.
-   * @returns {Promise<Subject[]>} - The matching subject records.
+   * @returns {Promise<{total: number, records: Subject[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
 
@@ -233,7 +236,7 @@ export class SubjectServices {
         order: [['name', 'ASC']]
       });
 
-      return matchingSubjects;
+      return { total: matchingSubjects.length, records: matchingSubjects };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the subjects' });

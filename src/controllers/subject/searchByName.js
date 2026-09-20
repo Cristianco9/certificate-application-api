@@ -21,12 +21,13 @@ export const searchSubjectsByName = async (req, res, next) => {
   const subjectManager = new SubjectServices();
 
   try {
-    const matchingSubjects = await subjectManager.listByPartialName(partialName);
+    const { total, records } = await subjectManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de asignaturas realizada exitosamente',
-      subjects: matchingSubjects,
+      total,
+      subjects: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

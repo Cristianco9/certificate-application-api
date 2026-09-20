@@ -18,12 +18,13 @@ export const listAllSubjects = async (req, res, next) => {
   const subjectManager = new SubjectServices();
 
   try {
-    const allSubjects = await subjectManager.listAll();
+    const { total, records } = await subjectManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Asignaturas encontradas exitosamente',
-      subjects: allSubjects,
+      total,
+      subjects: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {
