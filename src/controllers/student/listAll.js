@@ -18,12 +18,13 @@ export const listAllStudents = async (req, res, next) => {
   const studentManager = new StudentServices();
 
   try {
-    const allStudents = await studentManager.listAll();
+    const { total, records } = await studentManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Estudiantes encontrados exitosamente',
-      students: allStudents,
+      total,
+      students: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

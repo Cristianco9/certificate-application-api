@@ -21,12 +21,13 @@ export const listStudentsByDocumentType = async (req, res, next) => {
   const studentManager = new StudentServices();
 
   try {
-    const students = await studentManager.listByDocumentType(documentTypeId);
+    const { total, records } = await studentManager.listByDocumentType(documentTypeId);
 
     return res.status(200).json({
       success: true,
       message: 'Estudiantes encontrados exitosamente',
-      students,
+      total,
+      students: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

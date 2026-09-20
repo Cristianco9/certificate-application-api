@@ -313,7 +313,9 @@ export class StudentServices {
    * Retrieves all student records, ordered by first name and last name,
    * each with their related catalog records embedded.
    *
-   * @returns {Promise<Object[]>} - The formatted list of student records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -326,7 +328,9 @@ export class StudentServices {
         include: StudentServices.CATALOG_INCLUDES,
       });
 
-      return allStudents.map(StudentServices._formatStudent);
+      const records = allStudents.map(StudentServices._formatStudent);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the students' });
@@ -338,7 +342,8 @@ export class StudentServices {
    * the given text. Supports the multi-criteria search requirement.
    *
    * @param {string} partialName - The partial name to search for.
-   * @returns {Promise<Object[]>} - The formatted, matching student records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
 
@@ -361,7 +366,9 @@ export class StudentServices {
         include: StudentServices.CATALOG_INCLUDES,
       });
 
-      return matchingStudents.map(StudentServices._formatStudent);
+      const records = matchingStudents.map(StudentServices._formatStudent);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the students' });
@@ -401,7 +408,8 @@ export class StudentServices {
    * Retrieves all students belonging to a given municipality.
    *
    * @param {number|string} municipalityId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByMunicipality(municipalityId) {
 
@@ -419,7 +427,9 @@ export class StudentServices {
         include: StudentServices.CATALOG_INCLUDES,
       });
 
-      return students.map(StudentServices._formatStudent);
+      const records = students.map(StudentServices._formatStudent);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find students for the given municipality' });
@@ -430,7 +440,8 @@ export class StudentServices {
    * Retrieves all students by a specific document type.
    *
    * @param {number|string} documentTypeId - The id of the document type.
-   * @returns {Promise<Object[]>} - The formatted, matching student records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByDocumentType(documentTypeId) {
 
@@ -448,7 +459,9 @@ export class StudentServices {
         include: StudentServices.CATALOG_INCLUDES,
       });
 
-      return students.map(StudentServices._formatStudent);
+      const records = students.map(StudentServices._formatStudent);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find students for the given document type' });
