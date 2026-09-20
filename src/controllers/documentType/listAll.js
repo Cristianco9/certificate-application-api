@@ -27,12 +27,13 @@ export const listAllDocumentTypes = async (req, res, next) => {
 
   try {
     // Attempt to retrieve all document types
-    const allDocumentTypes = await documentTypeManager.listAll();
+    const { total, records } = await documentTypeManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Tipos de documento encontrados exitosamente',
-      documentTypes: allDocumentTypes,
+      total,
+      documentTypes: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

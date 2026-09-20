@@ -206,7 +206,9 @@ export class DocumentTypeServices {
   /**
    * Retrieves all document type records, ordered alphabetically by name.
    *
-   * @returns {Promise<DocumentType[]>} - The list of document type records.
+   * @returns {Promise<{total: number, records: DocumentType[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -215,7 +217,7 @@ export class DocumentTypeServices {
         order: [['name', 'ASC']]
       });
 
-      return allDocumentTypes;
+      return { total: allDocumentTypes.length, records: allDocumentTypes };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the document types' });
