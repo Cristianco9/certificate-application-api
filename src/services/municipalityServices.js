@@ -234,7 +234,9 @@ export class MunicipalityServices {
    * Retrieves all municipality records, ordered alphabetically by name,
    * each with its parent department embedded as a nested { id, name } object.
    *
-   * @returns {Promise<Object[]>} - The formatted list of municipality records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -244,7 +246,9 @@ export class MunicipalityServices {
         include: MunicipalityServices.DEPARTMENT_INCLUDE,
       });
 
-      return allMunicipalities.map(MunicipalityServices._formatMunicipality);
+      const records = allMunicipalities.map(MunicipalityServices._formatMunicipality);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the municipalities' });
@@ -258,7 +262,8 @@ export class MunicipalityServices {
    * context.md (e.g. 'Nombre parcial').
    *
    * @param {string} partialName - The partial name to search for.
-   * @returns {Promise<Object[]>} - The formatted, matching municipality records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
 
@@ -275,7 +280,9 @@ export class MunicipalityServices {
         include: MunicipalityServices.DEPARTMENT_INCLUDE,
       });
 
-      return matchingMunicipalities.map(MunicipalityServices._formatMunicipality);
+      const records = matchingMunicipalities.map(MunicipalityServices._formatMunicipality);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the municipalities' });
@@ -289,7 +296,8 @@ export class MunicipalityServices {
    * municipality).
    *
    * @param {number} departmentId - The id of the department.
-   * @returns {Promise<Object[]>} - The formatted, matching municipality records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByDepartment(departmentId) {
 
@@ -304,7 +312,9 @@ export class MunicipalityServices {
         include: MunicipalityServices.DEPARTMENT_INCLUDE,
       });
 
-      return municipalitiesByDepartment.map(MunicipalityServices._formatMunicipality);
+      const records = municipalitiesByDepartment.map(MunicipalityServices._formatMunicipality);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the municipalities for the given department' });

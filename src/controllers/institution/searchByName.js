@@ -29,12 +29,13 @@ export const searchInstitutionsByName = async (req, res, next) => {
 
   try {
     // Attempt to find institutions matching the partial name
-    const matchingInstitutions = await institutionManager.listByPartialName(partialName);
+    const { total, records } = await institutionManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de instituciones realizada exitosamente',
-      institutions: matchingInstitutions,
+      total,
+      institutions: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

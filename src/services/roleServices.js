@@ -200,7 +200,9 @@ export class RoleServices {
   /**
    * Retrieves all role records, ordered alphabetically by name.
    *
-   * @returns {Promise<Role[]>} - The list of role records.
+   * @returns {Promise<{total: number, records: Role[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -209,7 +211,7 @@ export class RoleServices {
         order: [['name', 'ASC']]
       });
 
-      return allRoles;
+      return { total: allRoles.length, records: allRoles };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the roles' });
@@ -250,7 +252,8 @@ export class RoleServices {
    * partial-text search is meaningful here.
    *
    * @param {string} partialDescription - The partial description to search for.
-   * @returns {Promise<Role[]>} - The matching role records.
+   * @returns {Promise<{total: number, records: Role[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialDescription(partialDescription) {
 
@@ -266,7 +269,7 @@ export class RoleServices {
         order: [['name', 'ASC']]
       });
 
-      return matchingRoles;
+      return { total: matchingRoles.length, records: matchingRoles };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the roles' });

@@ -22,12 +22,13 @@ export const listEnrollmentsByGroup = async (req, res, next) => {
   const enrollmentManager = new EnrollmentServices();
 
   try {
-    const enrollmentsByGroup = await enrollmentManager.listByGroup(groupId);
+    const { total, records } = await enrollmentManager.listByGroup(groupId);
 
     return res.status(200).json({
       success: true,
       message: 'Matrículas encontradas exitosamente',
-      enrollments: enrollmentsByGroup,
+      total,
+      enrollments: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

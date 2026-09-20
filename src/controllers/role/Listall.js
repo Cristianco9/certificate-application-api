@@ -25,12 +25,13 @@ export const listAllRoles = async (req, res, next) => {
 
   try {
     // Attempt to retrieve all roles
-    const allRoles = await roleManager.listAll();
+    const { total, records } = await roleManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Roles encontrados exitosamente',
-      roles: allRoles,
+      total,
+      roles: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

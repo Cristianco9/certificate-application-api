@@ -206,7 +206,9 @@ export class PhoneServices {
   /**
    * Retrieves all phone records, ordered by their id.
    *
-   * @returns {Promise<Phone[]>} - The list of phone records.
+   * @returns {Promise<{total: number, records: Phone[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -215,7 +217,7 @@ export class PhoneServices {
         order: [['id', 'ASC']]
       });
 
-      return allPhones;
+      return { total: allPhones.length, records: allPhones };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the phones' });
@@ -253,7 +255,8 @@ export class PhoneServices {
    * Useful for autocomplete-style search fields.
    *
    * @param {string} partialNumber - The partial number to search for.
-   * @returns {Promise<Phone[]>} - The matching phone records.
+   * @returns {Promise<{total: number, records: Phone[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialNumber(partialNumber) {
 
@@ -269,13 +272,12 @@ export class PhoneServices {
         order: [['id', 'ASC']]
       });
 
-      return matchingPhones;
+      return { total: matchingPhones.length, records: matchingPhones };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the phones' });
     }
   }
-
   // ==========================================================
   // PUBLIC METHODS (instance) — Ownership management
   // ==========================================================

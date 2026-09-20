@@ -19,12 +19,13 @@ export const listAllEnrollments = async (req, res, next) => {
   const enrollmentManager = new EnrollmentServices();
 
   try {
-    const allEnrollments = await enrollmentManager.listAll();
+    const { total, records } = await enrollmentManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Matrículas encontradas exitosamente',
-      enrollments: allEnrollments,
+      total,
+      enrollments: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

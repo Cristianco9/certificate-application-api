@@ -40,6 +40,7 @@ import { institutionSchema } from '../schemas/institutionSchema.js';
 import { createOneInstitution } from '../controllers/institution/create.js';
 import { listAllInstitutions } from '../controllers/institution/listAll.js';
 import { listOneInstitution } from '../controllers/institution/listOne.js';
+import { listInstitutionsByMunicipality } from '../controllers/institution/getByMunicipality.js';
 import { searchInstitutionsByName } from '../controllers/institution/searchByName.js';
 import { getInstitutionByInstitutionalCode } from '../controllers/institution/getByInstitutionalCode.js';
 import { getInstitutionByNit } from '../controllers/institution/getByNit.js';
@@ -123,6 +124,19 @@ institutionRouter.get(
   checkRole(['Máster', 'Administrador']),
   validatorHandler(institutionSchema.getInstitutionByNit, 'body'),
   getInstitutionByNit
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// GET /get-by-municipality  →  Search institutions by partial name
+// Body: { partialName }
+// ─────────────────────────────────────────────────────────────────────────────
+institutionRouter.get(
+  '/get-by-municipality',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador']),
+  validatorHandler(institutionSchema.getInstitutionsByMunicipality, 'body'),
+  listInstitutionsByMunicipality
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -19,12 +19,13 @@ export const listAllGrades = async (req, res, next) => {
   const gradeManager = new GradeServices();
 
   try {
-    const allGrades = await gradeManager.listAll();
+    const { total, records } = await gradeManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Grados encontrados exitosamente',
-      grades: allGrades,
+      total,
+      grades: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

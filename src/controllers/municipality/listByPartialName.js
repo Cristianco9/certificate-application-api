@@ -30,12 +30,13 @@ export const listMunicipalitiesByPartialName = async (req, res, next) => {
 
   try {
     // Attempt to find municipalities matching the partial name
-    const matchingMunicipalities = await municipalityManager.listByPartialName(partialName);
+    const { total, records } = await municipalityManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Municipios encontrados exitosamente',
-      municipalities: matchingMunicipalities,
+      total,
+      municipalities: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

@@ -30,12 +30,13 @@ export const listMunicipalitiesByDepartment = async (req, res, next) => {
 
   try {
     // Attempt to find municipalities belonging to the given department
-    const municipalitiesByDepartment = await municipalityManager.listByDepartment(departmentId);
+    const { total, records } = await municipalityManager.listByDepartment(departmentId);
 
     return res.status(200).json({
       success: true,
       message: 'Municipios encontrados exitosamente',
-      municipalities: municipalitiesByDepartment,
+      total,
+      municipalities: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

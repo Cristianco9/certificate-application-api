@@ -21,12 +21,13 @@ export const searchPhonesByNumber = async (req, res, next) => {
   const phoneManager = new PhoneServices();
 
   try {
-    const matchingPhones = await phoneManager.listByPartialNumber(partialNumber);
+    const { total, records } = await phoneManager.listByPartialNumber(partialNumber);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de teléfonos realizada exitosamente',
-      phones: matchingPhones,
+      total,
+      phones: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

@@ -19,12 +19,13 @@ export const listAllGroups = async (req, res, next) => {
   const groupManager = new GroupServices();
 
   try {
-    const allGroups = await groupManager.listAll();
+    const { total, records } = await groupManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Grupos encontrados exitosamente',
-      groups: allGroups,
+      total,
+      groups: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

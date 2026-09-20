@@ -24,12 +24,13 @@ export const listAllInstitutions = async (req, res, next) => {
 
   try {
     // Attempt to retrieve all institutions
-    const allInstitutions = await institutionManager.listAll();
+    const { total, records } = await institutionManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Instituciones encontradas exitosamente',
-      institutions: allInstitutions,
+      total,
+      institutions: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

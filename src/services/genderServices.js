@@ -200,7 +200,9 @@ export class GenderServices {
   /**
    * Retrieves all gender records, ordered alphabetically by name.
    *
-   * @returns {Promise<Gender[]>} - The list of gender records.
+   * @returns {Promise<{total: number, records: Gender[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -209,7 +211,7 @@ export class GenderServices {
         order: [['name', 'ASC']]
       });
 
-      return allGenders;
+      return { total: allGenders.length, records: allGenders };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the genders' });

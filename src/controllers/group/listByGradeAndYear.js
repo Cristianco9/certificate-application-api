@@ -23,12 +23,13 @@ export const listGroupsByGradeAndYear = async (req, res, next) => {
   const groupManager = new GroupServices();
 
   try {
-    const groupsByGradeAndYear = await groupManager.listByGradeAndYear(gradeId, year);
+    const { total, records } = await groupManager.listByGradeAndYear(gradeId, year);
 
     return res.status(200).json({
       success: true,
       message: 'Grupos encontrados exitosamente',
-      groups: groupsByGradeAndYear,
+      total,
+      groups: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

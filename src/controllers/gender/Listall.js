@@ -25,12 +25,13 @@ export const listAllGenders = async (req, res, next) => {
 
   try {
     // Attempt to retrieve all genders
-    const allGenders = await genderManager.listAll();
+    const { total, records } = await genderManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Géneros encontrados exitosamente',
-      genders: allGenders,
+      total,
+      genders: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

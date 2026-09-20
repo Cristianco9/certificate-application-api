@@ -18,12 +18,13 @@ export const listAllPhones = async (req, res, next) => {
   const phoneManager = new PhoneServices();
 
   try {
-    const allPhones = await phoneManager.listAll();
+    const { total, records } = await phoneManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Teléfonos encontrados exitosamente',
-      phones: allPhones,
+      total,
+      phones: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

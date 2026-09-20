@@ -21,12 +21,13 @@ export const listGroupsByInstitution = async (req, res, next) => {
   const groupManager = new GroupServices();
 
   try {
-    const groupsByInstitution = await groupManager.listByInstitution(institutionId);
+    const { total, records } = await groupManager.listByInstitution(institutionId);
 
     return res.status(200).json({
       success: true,
       message: 'Grupos encontrados exitosamente',
-      groups: groupsByInstitution,
+      total,
+      groups: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

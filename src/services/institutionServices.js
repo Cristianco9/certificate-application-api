@@ -340,7 +340,9 @@ export class InstitutionServices {
    * Each institution contains its municipality as a nested
    * { id, name } object.
    *
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
     try {
@@ -349,9 +351,11 @@ export class InstitutionServices {
         include: InstitutionServices.MUNICIPALITY_INCLUDE,
       });
 
-      return allInstitutions.map(
+      const records = allInstitutions.map(
         InstitutionServices._formatInstitution
       );
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, {
         message: 'Unable to find the institutions',
@@ -364,7 +368,8 @@ export class InstitutionServices {
    * provided text.
    *
    * @param {string} partialName
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
     if (!partialName) {
@@ -382,9 +387,11 @@ export class InstitutionServices {
         include: InstitutionServices.MUNICIPALITY_INCLUDE,
       });
 
-      return matchingInstitutions.map(
+      const records = matchingInstitutions.map(
         InstitutionServices._formatInstitution
       );
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, {
         message: 'Unable to search the institutions',
@@ -465,14 +472,15 @@ export class InstitutionServices {
     }
   }
 
-  /**
+ /**
    * Retrieves all institutions belonging to a municipality.
    *
    * Each institution contains its municipality as a nested
    * { id, name } object.
    *
    * @param {number|string} municipalityId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByMunicipality(municipalityId) {
     if (!municipalityId) {
@@ -491,9 +499,11 @@ export class InstitutionServices {
           include: InstitutionServices.MUNICIPALITY_INCLUDE,
         });
 
-      return institutionsByMunicipality.map(
+      const records = institutionsByMunicipality.map(
         InstitutionServices._formatInstitution
       );
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, {
         message:

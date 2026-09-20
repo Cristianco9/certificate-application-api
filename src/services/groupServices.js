@@ -216,7 +216,9 @@ export class GroupServices {
    * Retrieves all groups, ordered by year DESC and name ASC, with
    * Institution and Grade nested as `{ id, name }`.
    *
-   * @returns {Promise<Object[]>} - Array of formatted group objects.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    * @throws {Boom} - On DB failure.
    */
   async listAll() {
@@ -225,7 +227,10 @@ export class GroupServices {
         order: [['year', 'DESC'], ['name', 'ASC']],
         include: GroupServices.CATALOG_INCLUDES,
       });
-      return allGroups.map(GroupServices._formatGroup);
+
+      const records = allGroups.map(GroupServices._formatGroup);
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the groups' });
     }
@@ -236,7 +241,8 @@ export class GroupServices {
    * Results include nested Institution and Grade.
    *
    * @param {string} partialName - Partial name to search for.
-   * @returns {Promise<Object[]>} - Matching groups.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    * @throws {Boom} - If no search text provided or DB error.
    */
   async listByPartialName(partialName) {
@@ -248,7 +254,10 @@ export class GroupServices {
         order: [['year', 'DESC'], ['name', 'ASC']],
         include: GroupServices.CATALOG_INCLUDES,
       });
-      return groups.map(GroupServices._formatGroup);
+
+      const records = groups.map(GroupServices._formatGroup);
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the groups' });
     }
@@ -259,7 +268,8 @@ export class GroupServices {
    * Results include nested Institution and Grade.
    *
    * @param {number} institutionId - The institution ID to filter by.
-   * @returns {Promise<Object[]>} - Groups for that institution.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    * @throws {Boom} - If missing ID or DB error.
    */
   async listByInstitution(institutionId) {
@@ -271,7 +281,10 @@ export class GroupServices {
         order: [['year', 'DESC'], ['name', 'ASC']],
         include: GroupServices.CATALOG_INCLUDES,
       });
-      return groups.map(GroupServices._formatGroup);
+
+      const records = groups.map(GroupServices._formatGroup);
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find groups for the given institution' });
     }
@@ -283,7 +296,8 @@ export class GroupServices {
    *
    * @param {number} gradeId - The grade ID.
    * @param {number} year - The academic year.
-   * @returns {Promise<Object[]>} - Matching groups.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    * @throws {Boom} - If missing parameters or DB error.
    */
   async listByGradeAndYear(gradeId, year) {
@@ -295,7 +309,10 @@ export class GroupServices {
         order: [['name', 'ASC']],
         include: GroupServices.CATALOG_INCLUDES,
       });
-      return groups.map(GroupServices._formatGroup);
+
+      const records = groups.map(GroupServices._formatGroup);
+
+      return { total: records.length, records };
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find groups for the given grade and year' });
     }

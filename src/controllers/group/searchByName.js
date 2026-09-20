@@ -21,12 +21,13 @@ export const searchGroupsByName = async (req, res, next) => {
   const groupManager = new GroupServices();
 
   try {
-    const matchingGroups = await groupManager.listByPartialName(partialName);
+    const { total, records } = await groupManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de grupos realizada exitosamente',
-      groups: matchingGroups,
+      total,
+      groups: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

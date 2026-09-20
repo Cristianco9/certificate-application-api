@@ -247,7 +247,9 @@ export class EnrollmentServices {
    * (most recent first), each with its related student and group
    * embedded as nested objects.
    *
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -257,7 +259,9 @@ export class EnrollmentServices {
         include: EnrollmentServices.CATALOG_INCLUDES,
       });
 
-      return allEnrollments.map(EnrollmentServices._formatEnrollment);
+      const records = allEnrollments.map(EnrollmentServices._formatEnrollment);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the enrollments' });
@@ -270,7 +274,8 @@ export class EnrollmentServices {
    * student's full academic history across grades and years.
    *
    * @param {number} studentId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByStudent(studentId) {
 
@@ -285,7 +290,9 @@ export class EnrollmentServices {
         include: EnrollmentServices.CATALOG_INCLUDES,
       });
 
-      return enrollmentsByStudent.map(EnrollmentServices._formatEnrollment);
+      const records = enrollmentsByStudent.map(EnrollmentServices._formatEnrollment);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the enrollments for the given student' });
@@ -297,7 +304,8 @@ export class EnrollmentServices {
    * enrollment date. Supports listing the roster of a group.
    *
    * @param {number} groupId
-   * @returns {Promise<Object[]>}
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByGroup(groupId) {
 
@@ -312,7 +320,9 @@ export class EnrollmentServices {
         include: EnrollmentServices.CATALOG_INCLUDES,
       });
 
-      return enrollmentsByGroup.map(EnrollmentServices._formatEnrollment);
+      const records = enrollmentsByGroup.map(EnrollmentServices._formatEnrollment);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the enrollments for the given group' });

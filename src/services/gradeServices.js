@@ -196,14 +196,16 @@ export class GradeServices {
     }
   }
 
-  /**
+ /**
    * Retrieves all grade records, ordered by 'name'. Because 'name' is a
    * MySQL ENUM declared in curricular order ('Primero'...'Undécimo'),
    * an ORDER BY on this column sorts by the ENUM's internal index rather
    * than alphabetically, which conveniently yields the natural grade
    * sequence for free.
    *
-   * @returns {Promise<Grade[]>} - The list of grade records.
+   * @returns {Promise<{total: number, records: Grade[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -212,7 +214,7 @@ export class GradeServices {
         order: [['name', 'ASC']]
       });
 
-      return allGrades;
+      return { total: allGrades.length, records: allGrades };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find the grades' });
@@ -253,7 +255,8 @@ export class GradeServices {
    * partial-text search is meaningful here.
    *
    * @param {string} partialDescription - The partial description to search for.
-   * @returns {Promise<Grade[]>} - The matching grade records.
+   * @returns {Promise<{total: number, records: Grade[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialDescription(partialDescription) {
 
@@ -269,7 +272,7 @@ export class GradeServices {
         order: [['name', 'ASC']]
       });
 
-      return matchingGrades;
+      return { total: matchingGrades.length, records: matchingGrades };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to search the grades' });

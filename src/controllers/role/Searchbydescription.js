@@ -31,12 +31,13 @@ export const searchRolesByDescription = async (req, res, next) => {
 
   try {
     // Attempt to find roles matching the partial description
-    const matchingRoles = await roleManager.listByPartialDescription(partialDescription);
+    const { total, records } = await roleManager.listByPartialDescription(partialDescription);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de roles realizada exitosamente',
-      roles: matchingRoles,
+      total,
+      roles: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

@@ -25,12 +25,13 @@ export const listAllMunicipalities = async (req, res, next) => {
 
   try {
     // Attempt to retrieve every municipality
-    const allMunicipalities = await municipalityManager.listAll();
+    const { total, records } = await municipalityManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Municipios encontrados exitosamente',
-      municipalities: allMunicipalities,
+      total,
+      municipalities: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

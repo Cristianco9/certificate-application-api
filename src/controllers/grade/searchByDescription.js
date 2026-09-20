@@ -22,12 +22,13 @@ export const searchGradesByDescription = async (req, res, next) => {
   const gradeManager = new GradeServices();
 
   try {
-    const matchingGrades = await gradeManager.listByPartialDescription(partialDescription);
+    const { total, records } = await gradeManager.listByPartialDescription(partialDescription);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de grados realizada exitosamente',
-      grades: matchingGrades,
+      total,
+      grades: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {
