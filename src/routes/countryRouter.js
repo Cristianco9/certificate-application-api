@@ -46,7 +46,7 @@ import { countrySchema } from '../schemas/countrySchema.js';
 import { createOneCountry } from '../controllers/country/create.js';
 import { listAllCountries } from '../controllers/country/Listall.js';
 import { listOneCountry } from '../controllers/country/Listone.js';
-import { searchCountriesByName } from '../controllers/country/Searchbyname.js';
+import { searchCountriesByName } from '../controllers/country/SearchByname.js';
 import { getCountryByIso2Code } from '../controllers/country/Getbyiso2code.js';
 import { updateOneCountry } from '../controllers/country/update.js';
 import { deleteOneCountry } from '../controllers/country/delete.js';

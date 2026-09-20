@@ -25,12 +25,13 @@ export const listAllCountries = async (req, res, next) => {
 
   try {
     // Attempt to retrieve all countries
-    const allCountries = await countryManager.listAll();
+    const { total, records } = await countryManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Países encontrados exitosamente',
-      countries: allCountries,
+      total,
+      countries: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

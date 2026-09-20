@@ -31,12 +31,13 @@ export const searchCountriesByName = async (req, res, next) => {
 
   try {
     // Attempt to find countries matching the partial name
-    const matchingCountries = await countryManager.listByPartialName(partialName);
+    const { total, records } = await countryManager.listByPartialName(partialName);
 
     return res.status(200).json({
       success: true,
       message: 'Búsqueda de países realizada exitosamente',
-      countries: matchingCountries,
+      total,
+      countries: records,
       // Echo the token already rotated by authAppVerifyToken
       authentication: res.locals.newUserToken,
     });

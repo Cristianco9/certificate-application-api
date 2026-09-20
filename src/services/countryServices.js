@@ -200,7 +200,9 @@ export class CountryServices {
   /**
    * Retrieves all country records, ordered alphabetically by name.
    *
-   * @returns {Promise<Country[]>} - The list of country records.
+   * @returns {Promise<{total: number, records: Country[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    */
   async listAll() {
 
@@ -209,7 +211,7 @@ export class CountryServices {
         order: [['name', 'ASC']]
       });
 
-      return allCountries;
+      return { total: allCountries.length, records: allCountries };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'No es posible encontrar los países' });
@@ -222,7 +224,8 @@ export class CountryServices {
    * context.md (e.g. 'Nombre parcial').
    *
    * @param {string} partialName - The partial name to search for.
-   * @returns {Promise<Country[]>} - The matching country records.
+   * @returns {Promise<{total: number, records: Country[]}>} An object
+   * containing the count of matching records and the list itself.
    */
   async listByPartialName(partialName) {
 
@@ -238,13 +241,12 @@ export class CountryServices {
         order: [['name', 'ASC']]
       });
 
-      return matchingCountries;
+      return { total: matchingCountries.length, records: matchingCountries };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'No es posible buscar los países' });
     }
   }
-
   /**
    * Retrieves a single country by its ISO 3166-1 alpha-2 code.
    *
