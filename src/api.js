@@ -7,8 +7,8 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 // Middleware to handle body request
 import bodyParser from 'body-parser';
-// Middleware to handle cookies
-import cookieParser from 'cookie-parser';
+// Middleware to cross origins request
+import cors from 'cors';
 // Middleware for logging HTTP requests
 import morgan from 'morgan';
 // Function to test database connection
@@ -17,6 +17,9 @@ import { testConnection } from './libraries/DBConnection.js';
 import { theIPAddress, port } from './libraries/netConfig.js';
 // Main router for the API
 import routerApi from './routes/index.js';
+// import the configuration module
+import { config } from './config/config.js'
+
 // Custom error handling middlewares
 import {
     logError,
@@ -39,8 +42,6 @@ api.use(express.urlencoded({ extended: false }));
 api.use(express.json());
 // Middleware for parsing JSON bodies
 api.use(bodyParser.json());
-// Middleware for handle cookies
-api.use(cookieParser());
 
 // Static files path
 // Store in the constant the project dirname
@@ -49,7 +50,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Immediately Invoked Function Expression (IIFE) to run the server
 (async () => {
   // Await the api to start listening on the specified IP address and port
-  const createapi = await api.listen(port, theIPAddress, (req, res) => {
+  const createApi = await api.listen(port, theIPAddress, (req, res) => {
     // Log the server start information to the console
     console.log(`server on port http://${theIPAddress}:${port}`);
   });
@@ -61,6 +62,13 @@ setupAssociations();
 // Test database connection
 // Call the function to ensure the database connection is working
 testConnection();
+
+// Configure CORS to allow requests from the configured frontend origin
+api.use(cors({
+  origin: config.corsOrigin,
+  allowedHeaders: ['Content-Type', 'Authorization', 'apikey'],
+  exposedHeaders: ['X-Access-Token'],
+}));
 
 // Initialize the main router
 // Set up API routes
