@@ -18,7 +18,7 @@ import { theIPAddress, port } from './libraries/netConfig.js';
 // Main router for the API
 import routerApi from './routes/index.js';
 // import the configuration module
-import { config } from './config/config.js'
+import { config } from './config/config.js';
 
 // Custom error handling middlewares
 import {
@@ -33,9 +33,33 @@ import { setupAssociations } from './db/models/index.js';
 // Create the api with Express
 const api = express();
 
+// Trust proxy: number of proxy hops in front of the API (e.g. the Next.js
+// server = 1). Express then derives req.ip from X-Forwarded-For, which the
+// rate limiters use as their key. Only enabled when TRUST_PROXY_HOPS is set,
+// so local development (API called directly) keeps req.ip as the socket IP.
+// Never use `true`: clients could then spoof X-Forwarded-For and dodge the
+// limiters. This must be set BEFORE any middleware that reads req.ip.
+if (config.trustProxyHops > 0) {
+  api.set('trust proxy', config.trustProxyHops);
+}
+
 // Use middlewares
 // HTTP request logger middleware
 api.use(morgan('dev'));
+
+// Configure CORS to allow requests from the configured frontend origin.
+// Mounted before the body parsers and the routers so preflight OPTIONS
+// requests (which carry no apikey/Authorization headers) are answered here
+// and never reach checkApiKey.
+api.use(cors({
+  origin: config.corsOrigin,
+  allowedHeaders: ['Content-Type', 'Authorization', 'apikey'],
+  // Headers the browser is allowed to read from the response:
+  // - X-Access-Token: the rotated JWT
+  // - Retry-After / RateLimit: rate-limit info on 429 responses
+  exposedHeaders: ['X-Access-Token', 'Retry-After', 'RateLimit'],
+}));
+
 // Middleware to parse URL-encoded data
 api.use(express.urlencoded({ extended: false }));
 // Middleware to parse JSON data
@@ -62,13 +86,6 @@ setupAssociations();
 // Test database connection
 // Call the function to ensure the database connection is working
 testConnection();
-
-// Configure CORS to allow requests from the configured frontend origin
-api.use(cors({
-  origin: config.corsOrigin,
-  allowedHeaders: ['Content-Type', 'Authorization', 'apikey'],
-  exposedHeaders: ['X-Access-Token'],
-}));
 
 // Initialize the main router
 // Set up API routes
