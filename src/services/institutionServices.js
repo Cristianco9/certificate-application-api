@@ -347,7 +347,7 @@ export class InstitutionServices {
   async listAll() {
     try {
       const allInstitutions = await Institution.findAll({
-        order: [['name', 'ASC']],
+        order: [['id', 'ASC']],
         include: InstitutionServices.MUNICIPALITY_INCLUDE,
       });
 
