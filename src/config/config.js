@@ -27,5 +27,7 @@ export const config = {
   // JWT secret key for the authentication application
   authAppJwtKey: process.env.AUTH_APP_JWT_SECRET_KEY,
   // Allowed frontend origin for CORS requests
-  corsOrigin: process.env.CORS_ORIGIN
+  corsOrigin: process.env.CORS_ORIGIN,
+ // Proxy hops in front of the API;
+  trustProxyHops: parseInt(process.env.TRUST_PROXY_HOPS ?? '0', 10) || 0,
 };
