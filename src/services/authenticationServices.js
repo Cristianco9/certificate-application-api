@@ -18,6 +18,8 @@ import bcrypt from 'bcryptjs';
 import { hashPassword } from '../utils/auth/passwordHash.js';
 // import the configuration module
 import { config } from '../config/config.js'
+// Boom allows managing possible errors with HTTP-friendly error objects
+import Boom from '@hapi/boom';
 
 /**
  * Service class for authentication-related operations.
@@ -33,22 +35,25 @@ export class AuthenticationServices {
   /**
    * Authenticates a user with a username and password.
    *
-   * On success it updates the user's `lastLogin` timestamp, resolves the
-   * user's role name, and issues a signed JWT valid for one hour. The token
-   * payload carries the user id and role name.
+   * Only users whose status is 'ACTIVO' can log in. On success it updates
+   * the user's `lastLogin` timestamp, resolves the user's role name, and
+   * issues a signed JWT valid for one hour. The token payload carries the
+   * user id and role name.
    *
    * Note: this method deliberately returns status objects (rather than
-   * throwing) for the "user not found" and "wrong password" cases, so the
-   * caller can respond with a generic message without distinguishing which
-   * of the two failed.
+   * throwing) for the expected failure cases, so the caller can decide the
+   * HTTP response. "user not found" and "wrong password" must be collapsed
+   * by the caller into one generic response to prevent user enumeration.
+   * "inactive user" is only returned AFTER the password has been verified,
+   * so account status is never revealed to someone without valid credentials.
    *
    * @async
    * @param {string} username - The username supplied at login.
    * @param {string} password - The plain-text password supplied at login.
    * @returns {Promise<{status: string, token?: string}>} A result object whose
-   * `status` is one of `'user not found'`, `'wrong password'`, or `'logged'`.
-   * When `status` is `'logged'`, a `token` property with the signed JWT is
-   * also included.
+   * `status` is one of `'user not found'`, `'wrong password'`,
+   * `'inactive user'`, or `'logged'`. When `status` is `'logged'`, a `token`
+   * property with the signed JWT is also included.
    * @throws {Boom} Throws a wrapped Boom error if an unexpected failure occurs
    * while verifying credentials.
    */
@@ -67,12 +72,23 @@ export class AuthenticationServices {
         return { status: 'wrong password' };
       }
 
+      // Only active accounts can start a session. Checked after the
+      // password so status is not disclosed to unauthenticated callers.
+      if (userRecord.status !== 'ACTIVO') {
+        return { status: 'inactive user' };
+      }
+
+      const role = await Role.findOne({ where: { id: userRecord.roleId } });
+
+      // Defensive guard: without a role there is nothing to authorize with
+      if (!role) {
+        throw Boom.internal('The user has no valid role assigned');
+      }
+
       await User.update(
         { lastLogin: new Date() },
         { where: { id: userRecord.id } }
       );
-
-      const role = await Role.findOne({ where: { id: userRecord.roleId } });
 
       const userToken = signUserToken(
         { id: userRecord.id, role: role.name },
