@@ -73,15 +73,15 @@ subjectRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single subject by id
+// POST /list-one  →  Retrieve a single subject by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-subjectRouter.get(
+subjectRouter.post(
   '/list-one',
   checkApiKey,
-  validatorHandler(subjectSchema.getSubjectById, 'body'),
   authAppVerifyToken,
   checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  validatorHandler(subjectSchema.getSubjectById, 'body'),
   listOneSubject
 );
 

@@ -50,10 +50,10 @@ certificateRecipientRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single certificate recipient by id
+// POST /list-one  →  Retrieve a single certificate recipient by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-certificateRecipientRouter.get(
+certificateRecipientRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

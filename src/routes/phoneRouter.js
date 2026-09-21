@@ -75,10 +75,10 @@ phoneRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single phone by id
+// POST /list-one  →  Retrieve a single phone by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-phoneRouter.get(
+phoneRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

@@ -65,7 +65,7 @@ documentTypeRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the creation payload
   validatorHandler(documentTypeSchema.newDocumentTypeData, 'body'),
@@ -91,16 +91,16 @@ documentTypeRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single document type by id
+// POST /list-one  →  Retrieve a single document type by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-documentTypeRouter.get(
+documentTypeRouter.post(
   '/list-one',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(documentTypeSchema.getDocumentTypeById, 'body'),
@@ -120,7 +120,7 @@ documentTypeRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the exact name to search for
   validatorHandler(documentTypeSchema.getDocumentTypeByName, 'body'),
@@ -138,7 +138,7 @@ documentTypeRouter.patch(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the update payload
   validatorHandler(documentTypeSchema.updateDocumentTypeData, 'body'),
@@ -156,7 +156,7 @@ documentTypeRouter.delete(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(documentTypeSchema.deleteDocumentType, 'body'),

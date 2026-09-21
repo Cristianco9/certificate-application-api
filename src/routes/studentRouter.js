@@ -72,10 +72,10 @@ studentRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single student by id
+// POST /list-one  →  Retrieve a single student by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-studentRouter.get(
+studentRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

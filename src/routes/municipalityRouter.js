@@ -64,7 +64,7 @@ municipalityRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the creation payload
   validatorHandler(municipalitySchema.newMunicipalityData, 'body'),
@@ -90,17 +90,17 @@ municipalityRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single municipality by id
+// POST /list-one  →  Retrieve a single municipality by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-municipalityRouter.get(
+municipalityRouter.post(
   '/list-one',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
   // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
   // Step 4: validate that a valid id was provided
   validatorHandler(municipalitySchema.getMunicipalityById, 'body'),
   // Step 5: delegate to the controller
@@ -117,7 +117,7 @@ municipalityRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the partial search text
   validatorHandler(municipalitySchema.searchMunicipalitiesByName, 'body'),
@@ -126,19 +126,19 @@ municipalityRouter.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-department  →  Retrieve every municipality belonging to a
+// POST /get-by-department  →  Retrieve every municipality belonging to a
 // given department. Supports the cascading select flow (country ->
 // department -> municipality).
 // Body: { departmentId }
 // ─────────────────────────────────────────────────────────────────────────────
-municipalityRouter.get(
+municipalityRouter.post(
   '/get-by-department',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador']),
+  // Step 3: authorize just Master, Administrator, and auxiliar roles
+  checkRole(['Máster', 'Administrador', 'Auxiliar']),
   // Step 4: validate the department id
   validatorHandler(municipalitySchema.listMunicipalitiesByDepartment, 'body'),
   // Step 5: delegate to the controller
@@ -155,7 +155,7 @@ municipalityRouter.patch(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the update payload
   validatorHandler(municipalitySchema.updateMunicipalityData, 'body'),
@@ -173,7 +173,7 @@ municipalityRouter.delete(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(municipalitySchema.deleteMunicipality, 'body'),

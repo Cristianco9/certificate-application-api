@@ -44,8 +44,8 @@ import { departmentSchema } from '../schemas/departmentSchema.js';
 // ── Controllers ─────────────────────────────────────────────────────────────
 
 import { createOneDepartment } from '../controllers/department/create.js';
-import { listAllDepartments } from '../controllers/department/Listall.js';
-import { listOneDepartment } from '../controllers/department/Listone.js';
+import { listAllDepartments } from '../controllers/department/ListAll.js';
+import { listOneDepartment } from '../controllers/department/ListOne.js';
 import { listDepartmentsByPartialName } from '../controllers/department/listByPartialName.js';
 import { listDepartmentsByCountry } from '../controllers/department/listByCountry.js';
 import { updateOneDepartment } from '../controllers/department/update.js';
@@ -64,7 +64,7 @@ departmentRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the creation payload
   validatorHandler(departmentSchema.newDepartmentData, 'body'),
@@ -90,17 +90,17 @@ departmentRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single department by id
+// POST /list-one  →  Retrieve a single department by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-departmentRouter.get(
+departmentRouter.post(
   '/list-one',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
   // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
   // Step 4: validate that a valid id was provided
   validatorHandler(departmentSchema.getDepartmentById, 'body'),
   // Step 5: delegate to the controller
@@ -117,7 +117,7 @@ departmentRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the partial search text
   validatorHandler(departmentSchema.searchDepartmentsByName, 'body'),
@@ -126,19 +126,19 @@ departmentRouter.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-country  →  Retrieve every department belonging to a given
+// POST /get-by-country  →  Retrieve every department belonging to a given
 // country. Supports the cascading select flow (country -> department ->
 // municipality).
 // Body: { countryId }
 // ─────────────────────────────────────────────────────────────────────────────
-departmentRouter.get(
+departmentRouter.post(
   '/get-by-country',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador']),
+  // Step 3: authorize just Master, Administrator, and auxiliar roles
+  checkRole(['Máster', 'Administrador', 'Auxiliar']),
   // Step 4: validate the country id
   validatorHandler(departmentSchema.listDepartmentsByCountry, 'body'),
   // Step 5: delegate to the controller
@@ -155,7 +155,7 @@ departmentRouter.patch(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the update payload
   validatorHandler(departmentSchema.updateDepartmentData, 'body'),
@@ -173,7 +173,7 @@ departmentRouter.delete(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(departmentSchema.deleteDepartment, 'body'),

@@ -78,10 +78,10 @@ enrollmentRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single enrollment by id
+// POST /list-one  →  Retrieve a single enrollment by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-enrollmentRouter.get(
+enrollmentRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

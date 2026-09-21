@@ -2,6 +2,12 @@ import { Router } from 'express';
 
 // ── Middlewares ─────────────────────────────────────────────────────────────
 
+import {
+  loginIpLimiter,
+  loginAccountLimiter,
+  resetPasswordIpLimiter,
+  resetPasswordAccountLimiter,
+} from '../middlewares/rateLimitHandler.js';
 import { validatorHandler } from '../middlewares/validatorHandler.js';
 import { checkApiKey } from '../middlewares/apiAuthHandler.js';
 import { authAppVerifyToken } from '../middlewares/tokenHandlers/authAppTokenHandler.js';
@@ -25,6 +31,8 @@ const authenticationRouter = Router();
 // ─────────────────────────────────────────────────────────────────────────────
 authenticationRouter.post(
   '/login',
+  loginIpLimiter,
+  loginAccountLimiter,
   checkApiKey,
   validatorHandler(userSchema.loginCredentials, 'body'),
   login
@@ -52,14 +60,16 @@ authenticationRouter.get(
 // POST /reset-password  →  Reset a user's password without an active session
 // (the 'forgot password' flow: the user is NOT logged in and does not
 // remember their current password, so there is no session token to verify
-// or rotate). Identity is verified inside UserServices.resetPassword by
-// requiring email AND documentNumber to both match the same user record —
+// or rotate). Identity is verified inside AuthenticationServices.resetPassword
+// by requiring email AND documentNumber to both match the same user record —
 // not by a JWT. After a successful reset, the user must log in again
 // through POST /login using their new password.
 // Body: { email, documentNumber, newPassword }
 // ─────────────────────────────────────────────────────────────────────────────
 authenticationRouter.post(
   '/reset-password',
+  resetPasswordIpLimiter,
+  resetPasswordAccountLimiter,
   checkApiKey,
   validatorHandler(userSchema.resetPasswordData, 'body'),
   resetPassword

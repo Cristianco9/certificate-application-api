@@ -46,7 +46,7 @@ import { countrySchema } from '../schemas/countrySchema.js';
 import { createOneCountry } from '../controllers/country/create.js';
 import { listAllCountries } from '../controllers/country/Listall.js';
 import { listOneCountry } from '../controllers/country/Listone.js';
-import { searchCountriesByName } from '../controllers/country/SearchByname.js';
+import { searchCountriesByName } from '../controllers/country/SearchByName.js';
 import { getCountryByIso2Code } from '../controllers/country/Getbyiso2code.js';
 import { updateOneCountry } from '../controllers/country/update.js';
 import { deleteOneCountry } from '../controllers/country/delete.js';
@@ -64,7 +64,7 @@ countryRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the creation payload
   validatorHandler(countrySchema.newCountryData, 'body'),
@@ -82,25 +82,25 @@ countryRouter.get(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador']),
+  // Step 3: authorize just Master, Administrator, and auxiliar roles
+  checkRole(['Máster', 'Administrador', 'Auxiliar']),
   // Step 4: no schema — this endpoint takes no input parameters
   // Step 5: delegate to the controller
   listAllCountries
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single country by id
+// POST /list-one  →  Retrieve a single country by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-countryRouter.get(
+countryRouter.post(
   '/list-one',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador']),
+  // Step 3: authorize just Master, Administrator, and auxiliar roles
+  checkRole(['Máster', 'Administrador', 'Auxiliar']),
   // Step 4: validate that a valid id was provided
   validatorHandler(countrySchema.getCountryById, 'body'),
   // Step 5: delegate to the controller
@@ -117,7 +117,7 @@ countryRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the partial search text
   validatorHandler(countrySchema.searchCountriesByName, 'body'),
@@ -126,17 +126,17 @@ countryRouter.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-iso2-code  →  Retrieve a single country by its ISO 3166-1
+// POST /get-by-iso2-code  →  Retrieve a single country by its ISO 3166-1
 // alpha-2 code
 // Body: { iso2Code }
 // ─────────────────────────────────────────────────────────────────────────────
-countryRouter.get(
+countryRouter.post(
   '/get-by-iso2-code',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the ISO code
   validatorHandler(countrySchema.getCountryByIso2Code, 'body'),
@@ -154,7 +154,7 @@ countryRouter.patch(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the update payload
   validatorHandler(countrySchema.updateCountryData, 'body'),
@@ -172,7 +172,7 @@ countryRouter.delete(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(countrySchema.deleteCountry, 'body'),

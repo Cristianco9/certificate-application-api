@@ -74,10 +74,10 @@ gradeRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single grade by id
+// POST /list-one  →  Retrieve a single grade by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-gradeRouter.get(
+gradeRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

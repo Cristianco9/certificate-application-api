@@ -74,10 +74,10 @@ userRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single user by id
+// POST /list-one  →  Retrieve a single user by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-userRouter.get(
+userRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

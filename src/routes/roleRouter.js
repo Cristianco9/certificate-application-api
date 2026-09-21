@@ -65,7 +65,7 @@ roleRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: validate the creation payload
   validatorHandler(roleSchema.newRoleData, 'body'),
@@ -83,7 +83,7 @@ roleRouter.get(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: no schema — this endpoint takes no input parameters
   // Step 5: delegate to the controller
@@ -91,16 +91,16 @@ roleRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single role by id
+// POST /list-one  →  Retrieve a single role by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-roleRouter.get(
+roleRouter.post(
   '/list-one',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(roleSchema.getRoleById, 'body'),
@@ -109,16 +109,16 @@ roleRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-name  →  Retrieve a single role by its exact name
+// POST /get-by-name  →  Retrieve a single role by its exact name
 // Body: { name }
 // ─────────────────────────────────────────────────────────────────────────────
-roleRouter.get(
+roleRouter.post(
   '/get-by-name',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: validate the name
   validatorHandler(roleSchema.getRoleByName, 'body'),
@@ -136,7 +136,7 @@ roleRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: validate the partial search text
   validatorHandler(roleSchema.searchRolesByDescription, 'body'),
@@ -154,7 +154,7 @@ roleRouter.patch(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: validate the update payload
   validatorHandler(roleSchema.updateRoleData, 'body'),
@@ -172,7 +172,7 @@ roleRouter.delete(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster','Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(roleSchema.deleteRole, 'body'),

@@ -63,7 +63,7 @@ genderRouter.post(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the creation payload
   validatorHandler(genderSchema.newGenderData, 'body'),
@@ -89,16 +89,16 @@ genderRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single gender by id
+// POST /list-one  →  Retrieve a single gender by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-genderRouter.get(
+genderRouter.post(
   '/list-one',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(genderSchema.getGenderById, 'body'),
@@ -107,16 +107,16 @@ genderRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-name  →  Retrieve a single gender by its exact name
+// POST /get-by-name  →  Retrieve a single gender by its exact name
 // Body: { name }
 // ─────────────────────────────────────────────────────────────────────────────
-genderRouter.get(
+genderRouter.post(
   '/get-by-name',
   // Step 1: verify the API key
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize all consuming roles
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the name
   validatorHandler(genderSchema.getGenderByName, 'body'),
@@ -134,7 +134,7 @@ genderRouter.patch(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate the update payload
   validatorHandler(genderSchema.updateGenderData, 'body'),
@@ -152,7 +152,7 @@ genderRouter.delete(
   checkApiKey,
   // Step 2: verify the session token
   authAppVerifyToken,
-  // Step 3: authorize only the administrator role
+  // Step 3: authorize just Master and Administrator roles
   checkRole(['Máster', 'Administrador']),
   // Step 4: validate that a valid id was provided
   validatorHandler(genderSchema.deleteGender, 'body'),

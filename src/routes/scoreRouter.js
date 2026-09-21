@@ -74,10 +74,10 @@ scoreRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single score by id
+// POST /list-one  →  Retrieve a single score by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-scoreRouter.get(
+scoreRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,

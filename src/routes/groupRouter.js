@@ -76,10 +76,10 @@ groupRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single group by id
+// POST /list-one  →  Retrieve a single group by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-groupRouter.get(
+groupRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
@@ -102,10 +102,10 @@ groupRouter.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-institution  →  Retrieve every group belonging to a given institution
+// POST /get-by-institution  →  Retrieve every group belonging to a given institution
 // Body: { institutionId }
 // ─────────────────────────────────────────────────────────────────────────────
-groupRouter.get(
+groupRouter.post(
   '/get-by-institution',
   checkApiKey,
   authAppVerifyToken,
@@ -115,10 +115,10 @@ groupRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-grade-and-year  →  Retrieve groups matching a grade and academic year
+// POST /get-by-grade-and-year  →  Retrieve groups matching a grade and academic year
 // Body: { gradeId, year }
 // ─────────────────────────────────────────────────────────────────────────────
-groupRouter.get(
+groupRouter.post(
   '/get-by-grade-and-year',
   checkApiKey,
   authAppVerifyToken,

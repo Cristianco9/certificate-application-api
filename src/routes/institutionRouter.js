@@ -75,10 +75,10 @@ institutionRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /list-one  →  Retrieve a single institution by id
+// POST /list-one  →  Retrieve a single institution by id
 // Body: { id }
 // ─────────────────────────────────────────────────────────────────────────────
-institutionRouter.get(
+institutionRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
@@ -101,10 +101,10 @@ institutionRouter.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-institutional-code  →  Retrieve institution by institutional code
+// POST /get-by-institutional-code  →  Retrieve institution by institutional code
 // Body: { institutionalCode }
 // ─────────────────────────────────────────────────────────────────────────────
-institutionRouter.get(
+institutionRouter.post(
   '/get-by-institutional-code',
   checkApiKey,
   authAppVerifyToken,
@@ -114,10 +114,10 @@ institutionRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-nit  →  Retrieve institution by NIT
+// POST /get-by-nit  →  Retrieve institution by NIT
 // Body: { nitId }
 // ─────────────────────────────────────────────────────────────────────────────
-institutionRouter.get(
+institutionRouter.post(
   '/get-by-nit',
   checkApiKey,
   authAppVerifyToken,
@@ -127,10 +127,10 @@ institutionRouter.get(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// GET /get-by-municipality  →  Search institutions by partial name
+// POST /get-by-municipality  →  Search institutions by municipality id
 // Body: { partialName }
 // ─────────────────────────────────────────────────────────────────────────────
-institutionRouter.get(
+institutionRouter.post(
   '/get-by-municipality',
   checkApiKey,
   authAppVerifyToken,
