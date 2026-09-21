@@ -5,8 +5,8 @@
   "main": "src/app.js",
   "type": "module",
   "scripts": {
-    "start": "node src/app.js",
-    "dev": "nodemon src/app.js",
+    "start": "node src/api.js",
+    "dev": "nodemon src/api.js",
     "dev-dep": "npm install && npm install nodemon morgan eslint eslint-config-prettier eslint-plugin-prettier prettier --save-dev -D",
     "env-var": "cp ./env/.envExample ./.env && echo \"environment variables injected\"",
     "test": "echo \"Error: no test specified\" && exit 1",

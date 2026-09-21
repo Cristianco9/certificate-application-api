@@ -24,13 +24,13 @@ import phoneRouter from "./phoneRouter.js";
 
 
 // Function to set up API routes
-const routerApi = (app) => {
+const routerApi = (api) => {
 
   // Create a new Router instance
   const router = Router();
 
-  // Use the router instance for the '/app/v1' path
-  app.use('/app/v1', router);
+  // Use the router instance for the '/api/v1' path
+  api.use('/api/v1', router);
 
   // Catalog of the sub-routes
   router.use('/auth', authenticationRouter);

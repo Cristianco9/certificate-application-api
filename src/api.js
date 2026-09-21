@@ -1,7 +1,7 @@
 // Import necessary modules and dependencies
-// Express framework for creating the app
+// Express framework for creating the api
 import express from 'express';
-// function to manage files and directories since the node.js app
+// function to manage files and directories since the node.js api
 import path from 'path';
 // function to have access to the directory or file path
 import { fileURLToPath } from 'url';
@@ -27,20 +27,20 @@ import {
 // Import the setup of the database entities associations
 import { setupAssociations } from './db/models/index.js';
 
-// Create the app with Express
-const app = express();
+// Create the api with Express
+const api = express();
 
 // Use middlewares
 // HTTP request logger middleware
-app.use(morgan('dev'));
+api.use(morgan('dev'));
 // Middleware to parse URL-encoded data
-app.use(express.urlencoded({ extended: false }));
+api.use(express.urlencoded({ extended: false }));
 // Middleware to parse JSON data
-app.use(express.json());
+api.use(express.json());
 // Middleware for parsing JSON bodies
-app.use(bodyParser.json());
+api.use(bodyParser.json());
 // Middleware for handle cookies
-app.use(cookieParser());
+api.use(cookieParser());
 
 // Static files path
 // Store in the constant the project dirname
@@ -48,8 +48,8 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Immediately Invoked Function Expression (IIFE) to run the server
 (async () => {
-  // Await the app to start listening on the specified IP address and port
-  const createApp = await app.listen(port, theIPAddress, (req, res) => {
+  // Await the api to start listening on the specified IP address and port
+  const createapi = await api.listen(port, theIPAddress, (req, res) => {
     // Log the server start information to the console
     console.log(`server on port http://${theIPAddress}:${port}`);
   });
@@ -64,7 +64,7 @@ testConnection();
 
 // Initialize the main router
 // Set up API routes
-routerApi(app);
+routerApi(api);
 
 // Import passport authentication setup
 // Dynamic import of authentication module
@@ -72,13 +72,13 @@ const passport = import('./utils/auth/index.js');
 
 // Use custom error handling middlewares
 // Middleware for logging errors
-app.use(logError);
+api.use(logError);
 // Middleware for handling ORM errors
-app.use(ORMErrorHandler);
+api.use(ORMErrorHandler);
 // Middleware for handling Boom errors
-app.use(boomErrorHandler);
+api.use(boomErrorHandler);
 // General error handling middleware
-app.use(errorHandler);
+api.use(errorHandler);
 
-// Export the app for use in other files
-export default app;
+// Export the api for use in other files
+export default api;
