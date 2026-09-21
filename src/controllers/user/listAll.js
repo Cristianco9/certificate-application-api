@@ -19,12 +19,13 @@ export const listAllUsers = async (req, res, next) => {
   const userManager = new UserServices();
 
   try {
-    const allUsers = await userManager.listAll();
+    const { total, records } = await userManager.listAll();
 
     return res.status(200).json({
       success: true,
       message: 'Usuarios encontrados exitosamente',
-      users: allUsers,
+      total,
+      users: records,
       authentication: res.locals.newUserToken,
     });
   } catch (error) {

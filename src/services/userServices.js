@@ -226,7 +226,9 @@ export class UserServices {
    * user's foreign-key catalog records as nested `{ id, name }` objects.
    *
    * @async
-   * @returns {Promise<Object[]>} The formatted list of user records.
+   * @returns {Promise<{total: number, records: Object[]}>} An object
+   * containing the count of records returned by this request and the list
+   * itself, so the controller can surface `total` alongside the collection.
    * @throws {Boom} Throws a wrapped Boom error if the lookup fails.
    */
   async listAll() {
@@ -237,7 +239,9 @@ export class UserServices {
         include: UserServices.CATALOG_INCLUDES,
       });
 
-      return allUsers.map(UserServices._formatUser);
+      const records = allUsers.map(UserServices._formatUser);
+
+      return { total: records.length, records };
 
     } catch (error) {
       throw Boom.boomify(error, { message: 'Unable to find users' });
