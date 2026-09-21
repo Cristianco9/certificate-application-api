@@ -15,68 +15,44 @@ import { signUserToken } from '../../utils/auth/tokenSign.js';
  * @returns {Response|void}
  */
 export const authAppVerifyToken = (req, res, next) => {
-  const authenticationToken = req.cookies?.authentication;
+  const header = req.headers.authorization;
 
-  // No authentication token was provided.
-  if (!authenticationToken) {
+  if (!header) {
     return res.status(401).json({
       success: false,
-      message:
-        'Authentication required. Please sign in to access this resource.',
+      message: 'Authentication required. Please sign in to access this resource.',
       error: 'AUTHENTICATION_REQUIRED',
     });
   }
 
-  jwt.verify(
-    authenticationToken,
-    config.authAppJwtKey,
-    (err, decoded) => {
-      // Token validation failed.
-      if (err) {
-        res.clearCookie('authentication');
+  const [scheme, token] = header.split(' ');
+  if (scheme?.toLowerCase() !== 'bearer' || !token) {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid authentication credentials. Please sign in again.',
+      error: 'INVALID_TOKEN',
+    });
+  }
 
-        if (err.name === 'TokenExpiredError') {
-          return res.status(401).json({
-            success: false,
-            message:
-              'Your session has expired. Please sign in again.',
-            error: 'TOKEN_EXPIRED',
-          });
-        }
-
-        return res.status(401).json({
-          success: false,
-          message:
-            'Invalid authentication credentials. Please sign in again.',
-          error: 'INVALID_TOKEN',
-        });
-      }
-
-      // Extract only the claims required by the application.
-      const userData = {
-        id: decoded.id,
-        role: decoded.role,
-      };
-
-      // Generate a fresh token to extend the session.
-      const newUserToken = signUserToken(
-        userData,
-        config.authAppJwtKey,
-        '1h'
-      );
-
-      // Refresh the authentication cookie.
-      res.cookie('authentication', newUserToken, {
-        httpOnly: true,
-        secure: config.nodeEnv === 'production',
-        sameSite: 'lax',
-        maxAge: 60 * 60 * 1000,
+  jwt.verify(token, config.authAppJwtKey, { algorithms: ['HS256'] }, (err, decoded) => {
+    if (err) {
+      // no res.clearCookie anymore
+      const expired = err.name === 'TokenExpiredError';
+      return res.status(401).json({
+        success: false,
+        message: expired
+          ? 'Your session has expired. Please sign in again.'
+          : 'Invalid authentication credentials. Please sign in again.',
+        error: expired ? 'TOKEN_EXPIRED' : 'INVALID_TOKEN',
       });
-
-      // Attach authenticated user data to the request.
-      req.user = userData;
-
-      return next();
     }
-  );
+
+    const userData = { id: decoded.id, role: decoded.role };
+    const newUserToken = signUserToken(userData, config.authAppJwtKey, '1h');
+
+    res.locals.newUserToken = newUserToken;       // controllers already read this
+    res.setHeader('X-Access-Token', newUserToken); // also travels in a header
+    req.user = userData;
+    return next();
+  });
 };
