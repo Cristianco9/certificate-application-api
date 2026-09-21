@@ -30,3 +30,5 @@ AUTH_APP_JWT_SECRET_KEY=b863794517c66b712790c8e8f84038c5ea575c767d8c9444965ea484
 
 # Frontend application URL allowed by CORS
 CORS_ORIGIN= http://localhost:3000
+# Proxy hops in front of the API
+TRUST_PROXY_HOPS=0
