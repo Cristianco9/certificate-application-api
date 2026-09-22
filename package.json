@@ -2,7 +2,7 @@
   "name": "certificate-application-api",
   "version": "0.1.8",
   "description": "RESTful backend API for the Historical Academic Certificate Management System",
-  "main": "src/app.js",
+  "main": "src/api.js",
   "type": "module",
   "scripts": {
     "start": "node src/api.js",
