@@ -4,6 +4,10 @@ import { Student } from '../db/models/student.js';
 import { Municipality } from '../db/models/municipality.js';
 import { DocumentType } from '../db/models/documentType.js';
 import { Gender } from '../db/models/gender.js';
+import { Score } from '../db/models/score.js';
+import { Subject } from '../db/models/subject.js';
+import { Group } from '../db/models/group.js';
+import { Grade } from '../db/models/grade.js';
 // Import the Enrollment model to enforce the delete-guard business rule
 import { Enrollment } from '../db/models/enrollment.js';
 // Import the Sequelize operators to build advanced query conditions
@@ -187,7 +191,7 @@ export class StudentServices {
         // If document number is not being updated and the student currently has no document,
         // verify that name+birthdate uniqueness is still valid (in case name or birthdate changed)
         const nameChanged = normalized.firstName !== undefined || normalized.middleName !== undefined ||
-                           normalized.firstLastName !== undefined || normalized.secondLastName !== undefined;
+          normalized.firstLastName !== undefined || normalized.secondLastName !== undefined;
         const birthChanged = normalized.birthDate !== undefined;
         if (nameChanged || birthChanged) {
           const existingByNameAndBirth = await this._findByNameAndBirth(
@@ -468,6 +472,251 @@ export class StudentServices {
     }
   }
 
+  /**
+   * Retrieves every score recorded for a student within a specific
+   * academic year.
+   *
+   * Equivalent of:
+   *   SELECT g.nombre grado, gr.nombre grupo, gr.anio, asig.nombre asignatura,
+   *          asig.ih, c.nota_definitiva, c.valoracion, c.nivelacion
+   *   FROM calificacion c
+   *   JOIN asignatura asig ON c.id_asignatura = asig.id_asignatura
+   *   JOIN matricula m ON c.id_matricula = m.id_matricula
+   *   JOIN grupo gr ON m.id_grupo = gr.id_grupo
+   *   JOIN grado g ON gr.id_grado = g.id_grado
+   *   WHERE m.id_estudiante = ? AND gr.anio = ?
+   *
+   * Field mapping (this schema has no separate nota_definitiva/
+   * valoracion/nivelacion columns): 'originalScore' + 'scoreType'
+   * cover nota_definitiva/valoracion, 'remedialScore' covers
+   * nivelacion, and Subject.hourlyIntensity covers 'ih'.
+   *
+   * @param {number|string} studentId
+   * @param {number|string} year - The academic year (Group.year).
+   * @returns {Promise<{total: number, records: Object[]}>}
+   */
+  async listScoresByStudentAndYear(studentId, year) {
+    if (!studentId || !year) {
+      throw Boom.badRequest('Both a student identifier and an academic year must be provided');
+    }
+
+    try {
+      await this._assertExists(Student, studentId, 'Student');
+
+      const scores = await Score.findAll({
+        include: StudentServices._buildScoreIncludes({ studentId, year }),
+        order: [
+          [{ model: Enrollment, as: 'enrollment' }, { model: Group, as: 'group' }, { model: Grade, as: 'grade' }, 'name', 'ASC'],
+          [{ model: Subject, as: 'subject' }, 'name', 'ASC'],
+        ],
+      });
+
+      const records = scores.map(StudentServices._formatScoreRow);
+
+      return { total: records.length, records };
+
+    } catch (error) {
+      throw Boom.boomify(error, { message: 'Unable to find the scores for the given student and year' });
+    }
+  }
+
+  /**
+   * Retrieves a student's full academic history across every year
+   * they have been enrolled, ordered by year, grade and subject.
+   *
+   * Equivalent of:
+   *   SELECT gr.anio, g.nombre grado, gr.nombre grupo, asig.nombre asignatura,
+   *          asig.ih, c.nota_definitiva, c.valoracion, c.nivelacion
+   *   FROM calificacion c
+   *   JOIN asignatura asig ON c.id_asignatura = asig.id_asignatura
+   *   JOIN matricula m ON c.id_matricula = m.id_matricula
+   *   JOIN grupo gr ON m.id_grupo = gr.id_grupo
+   *   JOIN grado g ON gr.id_grado = g.id_grado
+   *   WHERE m.id_estudiante = ?
+   *   ORDER BY gr.anio, g.nombre, asig.nombre
+   *
+   * @param {number|string} studentId
+   * @returns {Promise<{total: number, records: Object[]}>}
+   */
+  async getAcademicHistory(studentId) {
+    if (!studentId) {
+      throw Boom.badRequest('No student identifier was provided');
+    }
+
+    try {
+      await this._assertExists(Student, studentId, 'Student');
+
+      const scores = await Score.findAll({
+        include: StudentServices._buildScoreIncludes({ studentId }),
+        order: [
+          [{ model: Enrollment, as: 'enrollment' }, { model: Group, as: 'group' }, 'year', 'ASC'],
+          [{ model: Enrollment, as: 'enrollment' }, { model: Group, as: 'group' }, { model: Grade, as: 'grade' }, 'name', 'ASC'],
+          [{ model: Subject, as: 'subject' }, 'name', 'ASC'],
+        ],
+      });
+
+      const records = scores.map(StudentServices._formatScoreRow);
+
+      return { total: records.length, records };
+
+    } catch (error) {
+      throw Boom.boomify(error, { message: 'Unable to build the academic history for the given student' });
+    }
+  }
+
+  /**
+   * Retrieves the distinct academic years a student has been enrolled
+   * in, each with its grade and group.
+   *
+   * Equivalent of:
+   *   SELECT DISTINCT gr.anio, g.nombre grado, gr.nombre grupo
+   *   FROM matricula m
+   *   JOIN grupo gr ON m.id_grupo = gr.id_grupo
+   *   JOIN grado g ON gr.id_grado = g.id_grado
+   *   WHERE m.id_estudiante = ?
+   *   ORDER BY gr.anio
+   *
+   * @param {number|string} studentId
+   * @returns {Promise<{total: number, records: Object[]}>}
+   */
+  async listCourseYears(studentId) {
+    if (!studentId) {
+      throw Boom.badRequest('No student identifier was provided');
+    }
+
+    try {
+      await this._assertExists(Student, studentId, 'Student');
+
+      const enrollments = await Enrollment.findAll({
+        where: { studentId },
+        attributes: ['id'],
+        include: [
+          {
+            model: Group,
+            as: 'group',
+            required: true,
+            attributes: ['id', 'name', 'year'],
+            include: [{ model: Grade, as: 'grade', attributes: ['id', 'name'] }],
+          },
+        ],
+        order: [[{ model: Group, as: 'group' }, 'year', 'ASC']],
+      });
+
+      // De-duplicate on year+grade+group, mirroring SELECT DISTINCT.
+      // Each enrollment already maps to one group/grade/year, but this
+      // guards against a future data shape allowing more than one
+      // enrollment per year for the same student.
+      const seen = new Set();
+      const records = [];
+
+      for (const enrollment of enrollments) {
+        const group = enrollment.group;
+        if (!group) continue;
+
+        const key = `${group.year}-${group.grade?.id}-${group.id}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+
+        records.push({
+          year: group.year,
+          grade: group.grade ? { id: group.grade.id, name: group.grade.name } : null,
+          group: { id: group.id, name: group.name },
+        });
+      }
+
+      return { total: records.length, records };
+
+    } catch (error) {
+      throw Boom.boomify(error, { message: 'Unable to find the academic years for the given student' });
+    }
+  }
+
+  /**
+   * Retrieves every score for a student within a specific grade
+   * (across all years/groups the student was enrolled in that grade),
+   * embedding the student's name.
+   *
+   * Equivalent of:
+   *   SELECT e.nombres, e.apellidos, g.nombre grado, gr.nombre grupo, gr.anio,
+   *          a.nombre asignatura, a.ih, c.nota_definitiva, c.valoracion, c.nivelacion
+   *   FROM calificacion c
+   *   JOIN asignatura a ON c.id_asignatura = a.id_asignatura
+   *   JOIN matricula m ON c.id_matricula = m.id_matricula
+   *   JOIN estudiante e ON m.id_estudiante = e.id_estudiante
+   *   JOIN grupo gr ON m.id_grupo = gr.id_grupo
+   *   JOIN grado g ON gr.id_grado = g.id_grado
+   *   WHERE e.id_estudiante = ? AND g.nombre = ?
+   *   ORDER BY a.nombre
+   *
+   * @param {number|string} studentId
+   * @param {string} gradeName - Exact grade name (ENUM, e.g. 'Séptimo').
+   * @returns {Promise<{total: number, records: Object[]}>}
+   */
+  async listScoresByStudentAndGrade(studentId, gradeName) {
+    if (!studentId || !gradeName) {
+      throw Boom.badRequest('Both a student identifier and a grade name must be provided');
+    }
+
+    try {
+      const theStudent = await this._findById(studentId);
+
+      if (!theStudent) {
+        throw Boom.notFound('Student not found');
+      }
+
+      const scores = await Score.findAll({
+        include: StudentServices._buildScoreIncludes({ studentId, gradeName }),
+        order: [[{ model: Subject, as: 'subject' }, 'name', 'ASC']],
+      });
+
+      const records = scores.map((score) => ({
+        ...StudentServices._formatScoreRow(score),
+        student: {
+          id: theStudent.id,
+          firstName: theStudent.firstName,
+          firstLastName: theStudent.firstLastName,
+        },
+      }));
+
+      return { total: records.length, records };
+
+    } catch (error) {
+      throw Boom.boomify(error, { message: 'Unable to find the scores for the given student and grade' });
+    }
+  }
+
+  /**
+   * Computes a lightweight summary (subject count and, when every
+   * score is numeric, the arithmetic average) for a student in a
+   * specific academic year. Not a raw-SQL equivalent — this is a
+   * building block for the certificate-generation feature described
+   * as a known gap in AGENTS.md §10 (a "boletín"/report-card view
+   * needs exactly this kind of rollup before it can render a summary
+   * line per year).
+   *
+   * @param {number|string} studentId
+   * @param {number|string} year
+   * @returns {Promise<{year: number, subjectCount: number, numericAverage: number|null}>}
+   */
+  async getYearSummary(studentId, year) {
+    const { records } = await this.listScoresByStudentAndYear(studentId, year);
+
+    const numericScores = records
+      .filter((row) => row.scoreType === 'NUMERICA')
+      .map((row) => parseFloat(row.originalScore))
+      .filter((value) => !Number.isNaN(value));
+
+    const numericAverage = numericScores.length
+      ? Math.round((numericScores.reduce((sum, value) => sum + value, 0) / numericScores.length) * 10) / 10
+      : null;
+
+    return {
+      year: Number(year),
+      subjectCount: records.length,
+      numericAverage,
+    };
+  }
+
   // ==========================================================
   // PRIVATE HELPERS (instance)
   // Naming convention: a leading underscore marks a method as
@@ -658,5 +907,73 @@ export class StudentServices {
     if (data.genderId !== undefined) normalized.genderId = normalizeId(data.genderId);
 
     return normalized;
+  }
+
+  /**
+   * Builds the Score -> Subject / Score -> Enrollment -> Group -> Grade
+   * include tree shared by every academic-history read method above.
+   * Filters are applied at the level they belong to (studentId on
+   * Enrollment, year on Group, gradeName on Grade) so unfiltered calls
+   * (e.g. getAcademicHistory) still return every row.
+   *
+   * @private
+   * @static
+   */
+  static _buildScoreIncludes({ studentId, year, gradeName } = {}) {
+    return [
+      { model: Subject, as: 'subject', attributes: ['id', 'name', 'hourlyIntensity'] },
+      {
+        model: Enrollment,
+        as: 'enrollment',
+        required: true,
+        attributes: ['id', 'enrollmentDate'],
+        where: studentId ? { studentId } : undefined,
+        include: [
+          {
+            model: Group,
+            as: 'group',
+            required: true,
+            attributes: ['id', 'name', 'year'],
+            where: year ? { year } : undefined,
+            include: [
+              {
+                model: Grade,
+                as: 'grade',
+                required: true,
+                attributes: ['id', 'name'],
+                where: gradeName ? { name: gradeName } : undefined,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+  }
+
+  /**
+   * Flattens a Score instance (with SUBJECT/ENROLLMENT/GROUP/GRADE
+   * eagerly loaded via _buildScoreIncludes) into a report-row shape.
+   *
+   * @private
+   * @static
+   */
+  static _formatScoreRow(score) {
+    const plain = score.toJSON();
+    const group = plain.enrollment?.group ?? null;
+    const grade = group?.grade ?? null;
+    const subject = plain.subject ?? null;
+
+    return {
+      year: group?.year ?? null,
+      grade: grade ? { id: grade.id, name: grade.name } : null,
+      group: group ? { id: group.id, name: group.name } : null,
+      subject: subject
+        ? { id: subject.id, name: subject.name, hourlyIntensity: subject.hourlyIntensity }
+        : null,
+      originalScore: plain.originalScore,
+      scoreType: plain.scoreType,
+      remedialScore: plain.remedialScore,
+      enrollmentId: plain.enrollment?.id ?? null,
+    };
   }
 }
