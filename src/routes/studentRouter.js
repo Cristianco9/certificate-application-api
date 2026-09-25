@@ -40,6 +40,10 @@ import { searchStudentsByName } from '../controllers/student/searchByName.js';
 import { getStudentByDocumentNumber } from '../controllers/student/getByDocumentNumber.js';
 import { listStudentsByMunicipality } from '../controllers/student/listByMunicipality.js';
 import { listStudentsByDocumentType } from '../controllers/student/listByDocumentType.js';
+import { getScoresByStudentAndYear } from '../controllers/student/getScoresByYear.js';
+import { getStudentAcademicHistory } from '../controllers/student/getAcademicHistory.js';
+import { getStudentCourseYears } from '../controllers/student/getCourseYears.js';
+import { getScoresByStudentAndGrade } from '../controllers/student/getScoresByGrade.js';
 
 // Create a new Router instance dedicated to the student resource
 const studentRouter = Router();
@@ -162,6 +166,68 @@ studentRouter.delete(
   checkRole(['Máster', 'Administrador']),
   validatorHandler(studentSchema.deleteStudent, 'body'),
   deleteOneStudent
+);
+
+// ── Academic-progress read endpoints ────────────────────────────────────────
+// The four routes below do not operate on the 'estudiante' table directly.
+// They traverse Enrollment -> Group -> Grade -> Score to build the student's
+// academic record. Note the narrower role set: 'Auxiliar' is deliberately
+// excluded from academic-progress reads, unlike the CRUD reads above.
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /get-scores-by-year  →  Retrieve every score a student earned in a given
+// academic year, grouped by grade and subject (per-year report card view)
+// Body: { studentId, year }
+// ─────────────────────────────────────────────────────────────────────────────
+studentRouter.post(
+  '/get-scores-by-year',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  validatorHandler(studentSchema.getScoresByStudentAndYear, 'body'),
+  getScoresByStudentAndYear
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /get-academic-history  →  Retrieve a student's entire cross-year
+// academic record (every enrollment, ordered by year, grade and subject)
+// Body: { studentId }
+// ─────────────────────────────────────────────────────────────────────────────
+studentRouter.post(
+  '/get-academic-history',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  validatorHandler(studentSchema.getAcademicHistory, 'body'),
+  getStudentAcademicHistory
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /get-course-years  →  Retrieve the distinct year/grade/group triples
+// a student was enrolled in (navigation index for the year selector)
+// Body: { studentId }
+// ─────────────────────────────────────────────────────────────────────────────
+studentRouter.post(
+  '/get-course-years',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  validatorHandler(studentSchema.getCourseYears, 'body'),
+  getStudentCourseYears
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /get-scores-by-grade  →  Retrieve every score a student earned in a
+// given grade, across all years the student was enrolled in that grade
+// Body: { studentId, gradeName }
+// ─────────────────────────────────────────────────────────────────────────────
+studentRouter.post(
+  '/get-scores-by-grade',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  validatorHandler(studentSchema.getScoresByStudentAndGrade, 'body'),
+  getScoresByStudentAndGrade
 );
 
 export default studentRouter;
