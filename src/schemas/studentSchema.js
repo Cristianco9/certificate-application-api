@@ -28,6 +28,8 @@ import {
   studentDocumentTypeId,
   studentGenderId,
 } from '../utils/RegEx/studentRegEx.js';
+import { groupYear } from '../utils/RegEx/groupRegEx.js';
+import { gradeName } from '../utils/RegEx/gradeRegEx.js';
 
 // ── Primitive Joi types ─────────────────────────────────────────────────────
 
@@ -108,6 +110,20 @@ const joiDocumentTypeId = Joi.string().pattern(studentDocumentTypeId).allow('').
 const joiGenderId = Joi.string().pattern(studentGenderId).allow('').messages({
   'string.base': 'El id del género debe ser una cadena de texto.',
   'string.pattern.base': 'El id del género debe contener solo dígitos (1 a 10 dígitos).',
+});
+
+// Backs Group.year ('anio_grupo'). Reused from groupRegEx.js because
+// getScoresByStudentAndYear filters scores by the group's academic year.
+const joiYear = Joi.string().pattern(groupYear).messages({
+  'string.base': 'El año debe ser una cadena de texto.',
+  'string.pattern.base': 'El año debe ser un número de 4 dígitos entre 1900 y 2099.',
+});
+
+// Backs Grade.name ('nombre_grado'). Reused from gradeRegEx.js because
+// getScoresByStudentAndGrade filters scores by the grade's exact ENUM name.
+const joiGradeName = Joi.string().pattern(gradeName).messages({
+  'string.base': 'El nombre del grado debe ser una cadena de texto.',
+  'string.pattern.base': 'El nombre del grado debe ser uno de: Primero, Segundo, Tercero, Cuarto, Quinto, Sexto, Séptimo, Octavo, Noveno, Décimo, Undécimo.',
 });
 
 // ── Schema export ────────────────────────────────────────────────────────────
@@ -205,5 +221,35 @@ export const studentSchema = {
   // Validates StudentServices.deleteOne(studentId)
   deleteStudent: Joi.object({
     id: joiId.required(),
+  }),
+
+  // POST /students/get-scores-by-year (body: { studentId, year })
+  // Validates StudentServices.listScoresByStudentAndYear(studentId, year).
+  // Returns every score the student earned in the given academic year.
+  getScoresByStudentAndYear: Joi.object({
+    studentId: joiId.required(),
+    year: joiYear.required(),
+  }),
+
+  // POST /students/get-academic-history (body: { studentId })
+  // Validates StudentServices.getAcademicHistory(studentId).
+  // Returns the student's entire cross-year academic record.
+  getAcademicHistory: Joi.object({
+    studentId: joiId.required(),
+  }),
+
+  // POST /students/get-course-years (body: { studentId })
+  // Validates StudentServices.listCourseYears(studentId).
+  // Returns the distinct year/grade/group triples the student was enrolled in.
+  getCourseYears: Joi.object({
+    studentId: joiId.required(),
+  }),
+
+  // POST /students/get-scores-by-grade (body: { studentId, gradeName })
+  // Validates StudentServices.listScoresByStudentAndGrade(studentId, gradeName).
+  // Returns every score the student earned in the given grade, across all years.
+  getScoresByStudentAndGrade: Joi.object({
+    studentId: joiId.required(),
+    gradeName: joiGradeName.required(),
   }),
 };
