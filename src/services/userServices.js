@@ -291,7 +291,7 @@ async listSignerCandidates() {
       order: [['firstName', 'ASC']],
     });
 
-    const SIGNER_ROLES = new Set(['Rector', 'Funcionario', 'Administrador']);
+    const SIGNER_ROLES = new Set(['Rector', 'Secretario', 'Administrador']);
 
     return users
       .filter((u) => SIGNER_ROLES.has(u.role?.name))

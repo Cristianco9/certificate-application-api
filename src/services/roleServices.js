@@ -344,7 +344,7 @@ export class RoleServices {
    * @static
    * @type {string[]}
    */
-  static VALID_NAMES = ['Máster', 'Auxiliar', 'Administrador', 'Funcionario', 'Rector'];
+  static VALID_NAMES = ['Máster', 'Auxiliar', 'Administrador', 'Secretario', 'Rector'];
 
   /**
    * Validates that a name belongs to the closed set of role names,

@@ -57,7 +57,7 @@ userPhoneRouter.post(
   '/create',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(userPhoneSchema.newUserPhoneData, 'body'),
   createOneUserPhone
 );
@@ -95,7 +95,7 @@ userPhoneRouter.post(
   '/get-by-user',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(userPhoneSchema.listUserPhonesByUser, 'body'),
   listUserPhonesByUser
 );
@@ -135,7 +135,7 @@ userPhoneRouter.delete(
   '/delete',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(userPhoneSchema.deleteUserPhone, 'body'),
   deleteOneUserPhone
 );
@@ -149,7 +149,7 @@ userPhoneRouter.delete(
   '/unlink',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(userPhoneSchema.unlinkUserPhone, 'body'),
   unlinkUserPhone
 );

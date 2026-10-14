@@ -25,14 +25,13 @@ import { listCertificateRecipientsByDocumentType } from '../controllers/certific
 const certificateRecipientRouter = Router();
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /create  →  Create a new certificate recipient
 // Body: { firstName, lastName, documentTypeId, documentNumber, address }
 // ─────────────────────────────────────────────────────────────────────────────
 certificateRecipientRouter.post(
   '/create',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientSchema.newCertificateRecipientData, 'body'),
   createOneCertificateRecipient
 );
@@ -45,7 +44,7 @@ certificateRecipientRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   listAllCertificateRecipients
 );
 
@@ -57,7 +56,7 @@ certificateRecipientRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientSchema.getCertificateRecipientById, 'body'),
   listOneCertificateRecipient
 );
@@ -70,7 +69,7 @@ certificateRecipientRouter.post(
   '/search-by-name',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientSchema.searchCertificateRecipientsByName, 'body'),
   searchCertificateRecipientsByName
 );
@@ -83,7 +82,7 @@ certificateRecipientRouter.post(
   '/get-by-document-number',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientSchema.getCertificateRecipientByDocumentNumber, 'body'),
   getCertificateRecipientByDocumentNumber
 );
@@ -96,7 +95,7 @@ certificateRecipientRouter.post(
   '/get-by-document-type',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientSchema.listCertificateRecipientsByDocumentType, 'body'),
   listCertificateRecipientsByDocumentType
 );
@@ -109,7 +108,7 @@ certificateRecipientRouter.patch(
   '/update',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientSchema.updateCertificateRecipientData, 'body'),
   updateOneCertificateRecipient
 );

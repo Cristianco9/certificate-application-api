@@ -71,7 +71,7 @@ groupRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   listAllGroups
 );
 
@@ -83,7 +83,7 @@ groupRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(groupSchema.getGroupById, 'body'),
   listOneGroup
 );
@@ -96,7 +96,7 @@ groupRouter.post(
   '/search-by-name',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(groupSchema.searchGroupsByName, 'body'),
   searchGroupsByName
 );
@@ -122,7 +122,7 @@ groupRouter.post(
   '/get-by-grade-and-year',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(groupSchema.listGroupsByGradeAndYear, 'body'),
   listGroupsByGradeAndYear
 );

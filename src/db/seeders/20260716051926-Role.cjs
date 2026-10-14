@@ -11,14 +11,14 @@ module.exports = {
         ('Máster', 'Usuario con control total del sistema'),
         ('Auxiliar', 'Asistente administrativo con permisos limitados'),
         ('Administrador', 'Gestiona usuarios y configuraciones'),
-        ('Funcionario', 'Secretario académico que expide certificados'),
+        ('Secretario', 'Secretario académico que expide certificados'),
         ('Rector', 'Autoridad institucional con supervisión')
     `);
   },
 
   down: async (queryInterface, Sequelize) => {
     await queryInterface.bulkDelete('rol', {
-      nombre_rol: ['Máster', 'Auxiliar', 'Administrador', 'Funcionario', 'Rector'],
+      nombre_rol: ['Máster', 'Auxiliar', 'Administrador', 'Secretario', 'Rector'],
     });
   },
 };

@@ -194,7 +194,7 @@ Follow the existing services (`countryServices.js`, `studentServices.js`,
   shared secret identifying the *client application*, not the end user —
   it must never be exposed to end users and should be attached
   server-side by the frontend, not from browser JS.
-- **Roles**: `Máster`, `Administrador`, `Rector`, `Funcionario`, `Auxiliar`
+- **Roles**: `Máster`, `Administrador`, `Rector`, `Secretario`, `Auxiliar`
   (see `roleServices.js` `VALID_NAMES` and the `rol` ENUM). `checkRole([...])`
   authorizes based on `req.user.role`, decoded from the JWT — it does
   **not** re-verify the token; it must always run after

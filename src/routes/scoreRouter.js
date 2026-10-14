@@ -69,7 +69,7 @@ scoreRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   listAllScores
 );
 
@@ -81,7 +81,7 @@ scoreRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(scoreSchema.getScoreById, 'body'),
   listOneScore
 );
@@ -94,7 +94,7 @@ scoreRouter.post(
   '/get-by-subject',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(scoreSchema.listScoresBySubject, 'body'),
   listScoresBySubject
 );
@@ -107,7 +107,7 @@ scoreRouter.post(
   '/get-by-enrollment',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(scoreSchema.listScoresByEnrollment, 'body'),
   listScoresByEnrollment
 );
@@ -121,7 +121,7 @@ scoreRouter.post(
   '/get-by-subject-and-enrollment',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(scoreSchema.getScoreBySubjectAndEnrollment, 'body'),
   getScoreBySubjectAndEnrollment
 );

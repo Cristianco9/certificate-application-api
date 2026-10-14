@@ -68,7 +68,7 @@ subjectRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   listAllSubjects
 );
 
@@ -80,7 +80,7 @@ subjectRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(subjectSchema.getSubjectById, 'body'),
   listOneSubject
 );
@@ -93,7 +93,7 @@ subjectRouter.post(
   '/search-by-name',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(subjectSchema.searchSubjectsByName, 'body'),
   searchSubjectsByName
 );

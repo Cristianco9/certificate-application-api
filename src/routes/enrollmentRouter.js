@@ -9,7 +9,7 @@
 // studentRouter.js: mutation routes are restricted to a narrower set of
 // roles, while read routes are open to the broader set of roles that
 // need to consult academic history and group rosters day to day
-// (Rector, Funcionario/Secretario Académico, Auxiliar).
+// (Rector, Secretario/Secretario Académico, Auxiliar).
 //
 // Security pipeline applied to each route (in this strict order, per
 // AGENTS.md section 7):
@@ -73,7 +73,7 @@ enrollmentRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   listAllEnrollments
 );
 
@@ -85,7 +85,7 @@ enrollmentRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(enrollmentSchema.getEnrollmentById, 'body'),
   listOneEnrollment
 );
@@ -99,7 +99,7 @@ enrollmentRouter.post(
   '/get-by-student',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(enrollmentSchema.listEnrollmentsByStudent, 'body'),
   listEnrollmentsByStudent
 );
@@ -113,7 +113,7 @@ enrollmentRouter.post(
   '/get-by-group',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(enrollmentSchema.listEnrollmentsByGroup, 'body'),
   listEnrollmentsByGroup
 );
@@ -127,7 +127,7 @@ enrollmentRouter.post(
   '/get-by-student-and-group',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(enrollmentSchema.getEnrollmentByStudentAndGroup, 'body'),
   getEnrollmentByStudentAndGroup
 );

@@ -47,7 +47,7 @@ authenticationRouter.post(
 // NOT run through checkRole: every authenticated user must be able to
 // ask "who am I and what role do I have?" so the frontend can gate UI
 // correctly. The role value returned is the raw JWT claim — one of
-// 'Máster', 'Auxiliar', 'Administrador', 'Funcionario', 'Rector'.
+// 'Máster', 'Auxiliar', 'Administrador', 'Secretario', 'Rector'.
 // ─────────────────────────────────────────────────────────────────────────────
 authenticationRouter.get(
   '/me',

@@ -21,7 +21,7 @@
 //   5. controller → executes the business operation and builds the response.
 //
 // Role policy: mirrors the certificate recipient entity's own role split
-// (Máster, Administrador, Rector, Funcionario), while reads are open to
+// (Máster, Administrador, Rector, Secretario), while reads are open to
 // the same set.
 //
 // Mounted at: /app/v1/certificate-recipient-phones  (see src/routes/index.js)
@@ -62,7 +62,7 @@ certificateRecipientPhoneRouter.post(
   '/create',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientPhoneSchema.newCertificateRecipientPhoneData, 'body'),
   createOneCertificateRecipientPhone
 );
@@ -101,7 +101,7 @@ certificateRecipientPhoneRouter.post(
   '/get-by-certificate-recipient',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientPhoneSchema.listCertificateRecipientPhonesByCertificateRecipient, 'body'),
   listCertificateRecipientPhonesByCertificateRecipient
 );
@@ -142,7 +142,7 @@ certificateRecipientPhoneRouter.delete(
   '/delete',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientPhoneSchema.deleteCertificateRecipientPhone, 'body'),
   deleteOneCertificateRecipientPhone
 );
@@ -157,7 +157,7 @@ certificateRecipientPhoneRouter.delete(
   '/unlink',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateRecipientPhoneSchema.unlinkCertificateRecipientPhone, 'body'),
   unlinkCertificateRecipientPhone
 );

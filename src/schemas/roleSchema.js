@@ -32,7 +32,7 @@ const joiId = Joi.string().pattern(roleId).messages({
 // Backs Role.name ('nombre_rol'), a closed set of 5 institutional roles
 const joiName = Joi.string().pattern(roleName).messages({
   'string.base': 'El nombre del rol debe ser una cadena de texto.',
-  'string.pattern.base': 'El nombre del rol debe ser uno de: Máster, Auxiliar, Administrador, Funcionario, Rector.',
+  'string.pattern.base': 'El nombre del rol debe ser uno de: Máster, Auxiliar, Administrador, Secretario, Rector.',
 });
 
 // Backs Role.description ('descripcion_rol'), free text

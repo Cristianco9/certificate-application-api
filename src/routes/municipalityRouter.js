@@ -1,5 +1,3 @@
-// ────────────────────────────────────────────────────────────────────────────
-// MUNICIPALITY ROUTER
 // Entity: Municipality | Table: municipio
 //
 // Defines and exposes the HTTP endpoints used to manage the "municipality"
@@ -83,7 +81,7 @@ municipalityRouter.get(
   // Step 2: verify the session token
   authAppVerifyToken,
   // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   // Step 4: no schema — this endpoint takes no input parameters
   // Step 5: delegate to the controller
   listAllMunicipalities
@@ -100,7 +98,7 @@ municipalityRouter.post(
   // Step 2: verify the session token
   authAppVerifyToken,
   // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   // Step 4: validate that a valid id was provided
   validatorHandler(municipalitySchema.getMunicipalityById, 'body'),
   // Step 5: delegate to the controller

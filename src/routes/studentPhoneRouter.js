@@ -100,7 +100,7 @@ studentPhoneRouter.post(
   '/get-by-student',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(studentPhoneSchema.listStudentPhonesByStudent, 'body'),
   listStudentPhonesByStudent
 );

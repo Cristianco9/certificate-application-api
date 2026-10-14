@@ -1,11 +1,11 @@
 // The pattern ensures the role name matches exactly one of the 5 fixed
 // values used by the institution: 'Máster', 'Auxiliar',
-// 'Administrador', 'Funcionario', 'Rector'. Unlike a character-range
+// 'Administrador', 'Secretario', 'Rector'. Unlike a character-range
 // pattern, this is an exact literal alternation, since the field
 // represents a closed set of institutional roles rather than
 // free-form text. Matches the VARCHAR(50) column size defined in
 // rol.nombre_rol
-export const roleName = /^(Máster|Auxiliar|Administrador|Funcionario|Rector)$/;
+export const roleName = /^(Máster|Auxiliar|Administrador|Secretario|Rector)$/;
 
 // The pattern ensures the role description contains letters
 // (both uppercase and lowercase, including Spanish accented characters

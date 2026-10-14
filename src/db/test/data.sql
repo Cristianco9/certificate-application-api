@@ -351,7 +351,7 @@ INSERT IGNORE INTO telefono (numero_telefono) VALUES
   ('3157778899'),   -- master
   ('3004445566'),   -- auxiliar
   ('3189990011'),   -- administrador
-  ('3115554433'),   -- funcionario
+  ('3115554433'),   -- Secretario
   ('3006665544'),   -- rector
   -- Institution landlines (main + alternate)
   ('6028889900'),   -- institution main
@@ -372,7 +372,7 @@ SET @tel_mateo         = (SELECT id_telefono FROM telefono WHERE numero_telefono
 SET @tel_master        = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3157778899' LIMIT 1);
 SET @tel_auxiliar      = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3004445566' LIMIT 1);
 SET @tel_admin         = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3189990011' LIMIT 1);
-SET @tel_funcionario   = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3115554433' LIMIT 1);
+SET @tel_Secretario   = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3115554433' LIMIT 1);
 SET @tel_rector        = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3006665544' LIMIT 1);
 
 SET @tel_inst_main     = (SELECT id_telefono FROM telefono WHERE numero_telefono = '6028889900' LIMIT 1);
@@ -410,14 +410,14 @@ SET @rec_andres = (SELECT id_receptor_certificado FROM receptor_certificado WHER
 SET @usr_master      = (SELECT id_usuario FROM usuario WHERE email_usuario = 'master.dev@test.local'      LIMIT 1);
 SET @usr_auxiliar    = (SELECT id_usuario FROM usuario WHERE email_usuario = 'auxiliar.dev@test.local'    LIMIT 1);
 SET @usr_admin       = (SELECT id_usuario FROM usuario WHERE email_usuario = 'admin.dev@test.local'       LIMIT 1);
-SET @usr_funcionario = (SELECT id_usuario FROM usuario WHERE email_usuario = 'funcionario.dev@test.local' LIMIT 1);
+SET @usr_Secretario = (SELECT id_usuario FROM usuario WHERE email_usuario = 'Secretario.dev@test.local' LIMIT 1);
 SET @usr_rector      = (SELECT id_usuario FROM usuario WHERE email_usuario = 'rector.dev@test.local'      LIMIT 1);
 
 INSERT IGNORE INTO usuario_telefono (id_usuario, id_telefono) VALUES
   (@usr_master,      @tel_master),
   (@usr_auxiliar,    @tel_auxiliar),
   (@usr_admin,       @tel_admin),
-  (@usr_funcionario, @tel_funcionario),
+  (@usr_Secretario, @tel_Secretario),
   (@usr_rector,      @tel_rector);
 
 

@@ -30,7 +30,7 @@ import Boom from '@hapi/boom';
  *      update payload: re-pointing a signature at a different user is
  *      semantically a delete + create, not an in-place update.
  *
- *   2. A Certificate can carry MANY signatures (Rector + Funcionario,
+ *   2. A Certificate can carry MANY signatures (Rector + Secretario,
  *      etc.), which is why listByCertificate returns a collection.
  *
  * No table references 'firma_certificado' as a foreign key, so deleteOne

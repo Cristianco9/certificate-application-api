@@ -70,7 +70,7 @@ institutionRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   listAllInstitutions
 );
 
@@ -82,7 +82,7 @@ institutionRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(institutionSchema.getInstitutionById, 'body'),
   listOneInstitution
 );

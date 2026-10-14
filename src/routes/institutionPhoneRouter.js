@@ -102,7 +102,7 @@ institutionPhoneRouter.post(
   '/get-by-institution',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(institutionPhoneSchema.listInstitutionPhonesByInstitution, 'body'),
   listInstitutionPhonesByInstitution
 );

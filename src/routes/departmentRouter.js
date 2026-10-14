@@ -83,7 +83,7 @@ departmentRouter.get(
   // Step 2: verify the session token
   authAppVerifyToken,
   // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   // Step 4: no schema — this endpoint takes no input parameters
   // Step 5: delegate to the controller
   listAllDepartments
@@ -100,7 +100,7 @@ departmentRouter.post(
   // Step 2: verify the session token
   authAppVerifyToken,
   // Step 3: authorize all consuming roles
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   // Step 4: validate that a valid id was provided
   validatorHandler(departmentSchema.getDepartmentById, 'body'),
   // Step 5: delegate to the controller

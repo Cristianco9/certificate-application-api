@@ -21,7 +21,7 @@
 //   5. controller → executes the business operation and builds the response.
 //
 // Role policy: mirrors the certificate recipient entity's own role split
-// (Máster, Administrador, Rector, Funcionario), since a signature is
+// (Máster, Administrador, Rector, Secretario), since a signature is
 // only meaningful in the certificate-issuance workflow.
 //
 // Mounted at: /app/v1/certificate-signatures  (see src/routes/index.js)
@@ -63,7 +63,7 @@ certificateSignatureRouter.post(
   '/create',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateSignatureSchema.newCertificateSignatureData, 'body'),
   createOneCertificateSignature
 );
@@ -131,7 +131,7 @@ certificateSignatureRouter.post(
   '/get-by-signer',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateSignatureSchema.getCertificateSignatureBySigner, 'body'),
   getCertificateSignatureBySigner
 );
@@ -145,7 +145,7 @@ certificateSignatureRouter.post(
   '/get-by-certificate-and-signer',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateSignatureSchema.getCertificateSignatureByCertificateAndSigner, 'body'),
   getCertificateSignatureByCertificateAndSigner
 );

@@ -119,7 +119,7 @@ userRouter.delete(
 // POST /get-signer-candidates  →  Minimal user list for certificate signers
 //
 // Returns only the fields the certificate needs (name, document, role,
-// municipality) for users whose role is one of Rector / Funcionario /
+// municipality) for users whose role is one of Rector / Secretario /
 // Administrador. Unlike /list-all, this endpoint does NOT expose email,
 // account status, or last-login.
 // ─────────────────────────────────────────────────────────────────────────────
@@ -127,7 +127,7 @@ userRouter.post(
   '/get-signer-candidates',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   listSignerCandidates
 );
 

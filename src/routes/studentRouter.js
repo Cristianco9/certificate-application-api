@@ -72,7 +72,7 @@ studentRouter.get(
   '/list-all',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   listAllStudents
 );
 
@@ -84,7 +84,7 @@ studentRouter.post(
   '/list-one',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(studentSchema.getStudentById, 'body'),
   listOneStudent
 );
@@ -97,7 +97,7 @@ studentRouter.post(
   '/search-by-name',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(studentSchema.searchStudentsByName, 'body'),
   searchStudentsByName
 );
@@ -110,7 +110,7 @@ studentRouter.post(
   '/get-by-document-number',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(studentSchema.getStudentByDocumentNumber, 'body'),
   getStudentByDocumentNumber
 );
@@ -123,7 +123,7 @@ studentRouter.post(
   '/get-by-municipality',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(studentSchema.listStudentsByMunicipality, 'body'),
   listStudentsByMunicipality
 );
@@ -136,7 +136,7 @@ studentRouter.post(
   '/get-by-document-type',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario', 'Auxiliar']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(studentSchema.listStudentsByDocumentType, 'body'),
   listStudentsByDocumentType
 );
@@ -184,7 +184,7 @@ studentRouter.post(
   '/get-scores-by-year',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(studentSchema.getScoresByStudentAndYear, 'body'),
   getScoresByStudentAndYear
 );
@@ -198,7 +198,7 @@ studentRouter.post(
   '/get-academic-history',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(studentSchema.getAcademicHistory, 'body'),
   getStudentAcademicHistory
 );
@@ -212,7 +212,7 @@ studentRouter.post(
   '/get-course-years',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(studentSchema.getCourseYears, 'body'),
   getStudentCourseYears
 );
@@ -226,7 +226,7 @@ studentRouter.post(
   '/get-scores-by-grade',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(studentSchema.getScoresByStudentAndGrade, 'body'),
   getScoresByStudentAndGrade
 );
@@ -249,7 +249,7 @@ studentRouter.post(
   '/search',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(studentSchema.searchStudents, 'body'),
   searchStudents
 );
