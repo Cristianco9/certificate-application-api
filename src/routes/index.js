@@ -19,6 +19,7 @@ import enrollmentRouter from "./enrollmentRouter.js";
 import userRouter from "./userRouter.js";
 import certificateRecipientRouter from "./certificateRecipient.js";
 import scoreRouter from "./scoreRouter.js";
+import certificateRouter from "./certificateRouter.js";
 import phoneRouter from "./phoneRouter.js";
 import userPhoneRouter from "./userPhoneRouter.js";
 import institutionPhoneRouter from "./institutionPhoneRouter.js";
@@ -55,6 +56,7 @@ const routerApi = (api) => {
   router.use('/users', userRouter);
   router.use('/certificate-recipients', certificateRecipientRouter);
   router.use('/scores', scoreRouter);
+  router.use('/certificates', certificateRouter);
   router.use('/phones', phoneRouter);
   router.use('/user-phones', userPhoneRouter);
   router.use('/institution-phones', institutionPhoneRouter);
