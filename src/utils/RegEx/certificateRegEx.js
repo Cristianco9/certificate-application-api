@@ -1,11 +1,15 @@
-// The pattern ensures the official record/act number accepts either:
-// - a plain year-based consecutive (e.g. '2026-0123'), or
-// - a prefixed consecutive with an uppercase letter prefix, year, and
-//   consecutive number, separated by hyphens (e.g. 'ACTA-2026-0123')
-// where the year is a 4-digit number and the consecutive is 3 to 6
-// digits, matching the VARCHAR(30) column size defined in
+// The pattern ensures the official record/act number follows the
+// institution's auto-generated format: two digits from the current
+// year (e.g. '26' for 2026) followed by a hyphen and a 3-digit
+// consecutive number that resets every year and starts at 001.
+// Examples: '26-001', '26-089', '27-124'.
+// Matches the VARCHAR(30) column size defined in
 // certificado.numero_acta_certificado
-export const certificateActNumber = /^([A-Z]{2,10}-)?\d{4}-\d{3,6}$/;
+export const certificateActNumber = /^\d{2}-\d{3}$/;
+
+// Validates a partial act-number input for the search-by-act-number
+// endpoint. Accepts '2', '26', '26-', '26-0', '26-00' or '26-001'.
+export const partialCertificateActNumber = /^\d{1,2}(-\d{0,3})?$/;
 
 // The pattern ensures the certificate id contains only numbers
 // and is between 1 to 10 digits long, matching the INTEGER primary key
