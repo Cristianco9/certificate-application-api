@@ -11,8 +11,15 @@
 --   POST /students/get-academic-history  (studentId)
 --   POST /students/get-scores-by-year    (studentId, year)
 --   POST /students/get-scores-by-grade   (studentId, gradeName)
+--   POST /certificates/get-by-act-number  (actNumber)   ← format 'YY-NNN'
+--   POST /certificates/search-by-act-number (partialActNumber)
 --
--- All statements are idempotent (INSERT IGNORE) and rely on natural key resolution.
+-- All statements are idempotent (INSERT IGNORE) and rely on natural key
+-- resolution. The certificate act numbers follow the auto-generation
+-- format enforced by CertificateServices._generateNextActNumber:
+--   'YY-NNN'  where YY = last 2 digits of the issue year, and NNN is a
+--   3-digit consecutive that RESETS every year and starts at 001.
+-- Examples: '20-001', '21-002', '22-003', '24-001'.
 -- ============================================================================
 
 
@@ -40,13 +47,17 @@ VALUES
 
 SET @inst_id = (SELECT id_institucion FROM institucion WHERE nit_institucion = '891900837-2' LIMIT 1);
 
--- Grades Reference
-SET @g_sexto    = (SELECT id_grado FROM grado WHERE nombre_grado = 'Sexto'    LIMIT 1);
-SET @g_septimo  = (SELECT id_grado FROM grado WHERE nombre_grado = 'Séptimo'  LIMIT 1);
-SET @g_octavo   = (SELECT id_grado FROM grado WHERE nombre_grado = 'Octavo'   LIMIT 1);
-SET @g_noveno   = (SELECT id_grado FROM grado WHERE nombre_grado = 'Noveno'   LIMIT 1);
-SET @g_decimo   = (SELECT id_grado FROM grado WHERE nombre_grado = 'Décimo'   LIMIT 1);
-SET @g_once     = (SELECT id_grado FROM grado WHERE nombre_grado = 'Once'     LIMIT 1);
+-- Grades Reference.
+-- IMPORTANT: the ENUM in the 'grado' table uses 'Undécimo' (not 'Once').
+-- Using the wrong label silently resolves to NULL and leaves
+-- grupo.id_grado_grupo NULL for every '11-A' group.
+SET @g_quinto    = (SELECT id_grado FROM grado WHERE nombre_grado = 'Quinto'    LIMIT 1);
+SET @g_sexto     = (SELECT id_grado FROM grado WHERE nombre_grado = 'Sexto'     LIMIT 1);
+SET @g_septimo   = (SELECT id_grado FROM grado WHERE nombre_grado = 'Séptimo'   LIMIT 1);
+SET @g_octavo    = (SELECT id_grado FROM grado WHERE nombre_grado = 'Octavo'    LIMIT 1);
+SET @g_noveno    = (SELECT id_grado FROM grado WHERE nombre_grado = 'Noveno'    LIMIT 1);
+SET @g_decimo    = (SELECT id_grado FROM grado WHERE nombre_grado = 'Décimo'    LIMIT 1);
+SET @g_undecimo  = (SELECT id_grado FROM grado WHERE nombre_grado = 'Undécimo'  LIMIT 1);
 
 -- Document Types & Genders
 SET @dt_ti   = (SELECT id_tipo_documento FROM tipo_documento WHERE nombre_tipodocumento = 'Tarjeta de Identidad' LIMIT 1);
@@ -54,7 +65,9 @@ SET @dt_cc   = (SELECT id_tipo_documento FROM tipo_documento WHERE nombre_tipodo
 SET @gen_masc = (SELECT id_genero FROM genero WHERE nombre_genero = 'Masculino' LIMIT 1);
 SET @gen_fem  = (SELECT id_genero FROM genero WHERE nombre_genero = 'Femenino'  LIMIT 1);
 
--- Municipalities (Valle del Cauca)
+-- Municipalities (Valle del Cauca).
+-- NOTE: every OR must be wrapped so AND stays scoped to the whole city-name
+-- group; otherwise 'AND d = Valle' only binds to the second branch.
 SET @muni_roldanillo = (
   SELECT m.id_municipio FROM municipio m
   JOIN departamento d ON m.id_departamento = d.id_departamento
@@ -70,10 +83,11 @@ SET @muni_palmira = (
   JOIN departamento d ON m.id_departamento = d.id_departamento
   WHERE m.nombre_municipio = 'Palmira' AND d.nombre_departamento = 'Valle del Cauca' LIMIT 1
 );
-SET @muni_tagua = (
+SET @muni_tulua = (
   SELECT m.id_municipio FROM municipio m
   JOIN departamento d ON m.id_departamento = d.id_departamento
-  WHERE m.nombre_municipio = 'Tulua' OR m.nombre_municipio = 'Tuluá' AND d.nombre_departamento = 'Valle del Cauca' LIMIT 1
+  WHERE (m.nombre_municipio = 'Tulua' OR m.nombre_municipio = 'Tuluá')
+    AND d.nombre_departamento = 'Valle del Cauca' LIMIT 1
 );
 
 
@@ -84,17 +98,17 @@ INSERT IGNORE INTO grupo
   (nombre_grupo, anio_grupo, id_grado_grupo, jornada, id_institucion, estado_grupo)
 VALUES
   -- Baseline groups
-  ('6-A', 2020, @g_sexto,   'Diurna',   @inst_id, 'Activo'),
-  ('7-A', 2021, @g_septimo, 'Diurna',   @inst_id, 'Activo'),
-  ('7-B', 2022, @g_septimo, 'Diurna',   @inst_id, 'Activo'),
-  ('8-A', 2023, @g_octavo,  'Diurna',   @inst_id, 'Activo'),
+  ('6-A', 2020, @g_sexto,     'Diurna',   @inst_id, 'Activo'),
+  ('7-A', 2021, @g_septimo,   'Diurna',   @inst_id, 'Activo'),
+  ('7-B', 2022, @g_septimo,   'Diurna',   @inst_id, 'Activo'),
+  ('8-A', 2023, @g_octavo,    'Diurna',   @inst_id, 'Activo'),
   -- Additional cohorts
-  ('8-B', 2021, @g_octavo,  'Diurna',   @inst_id, 'Activo'),
-  ('9-A', 2022, @g_noveno,  'Diurna',   @inst_id, 'Activo'),
-  ('9-B', 2023, @g_noveno,  'Diurna',   @inst_id, 'Activo'),
-  ('10-A', 2023, @g_decimo, 'Diurna',   @inst_id, 'Activo'),
-  ('10-B', 2024, @g_decimo, 'Nocturna', @inst_id, 'Activo'),
-  ('11-A', 2024, @g_once,   'Diurna',   @inst_id, 'Activo');
+  ('8-B', 2021, @g_octavo,    'Diurna',   @inst_id, 'Activo'),
+  ('9-A', 2022, @g_noveno,    'Diurna',   @inst_id, 'Activo'),
+  ('9-B', 2023, @g_noveno,    'Diurna',   @inst_id, 'Activo'),
+  ('10-A', 2023, @g_decimo,   'Diurna',   @inst_id, 'Activo'),
+  ('10-B', 2024, @g_decimo,   'Nocturna', @inst_id, 'Activo'),
+  ('11-A', 2024, @g_undecimo, 'Diurna',   @inst_id, 'Activo');
 
 -- Group References
 SET @grp_6a_2020  = (SELECT id_grupo FROM grupo WHERE nombre_grupo = '6-A'  AND anio_grupo = 2020 LIMIT 1);
@@ -202,6 +216,7 @@ SET @enr_sant_2024 = (SELECT id_matricula FROM matricula WHERE id_estudiante_mat
 
 SET @enr_mar_2022  = (SELECT id_matricula FROM matricula WHERE id_estudiante_matricula = @st_mariana AND id_grupo_matricula = @grp_9a_2022 LIMIT 1);
 SET @enr_mar_2023  = (SELECT id_matricula FROM matricula WHERE id_estudiante_matricula = @st_mariana AND id_grupo_matricula = @grp_9b_2023 LIMIT 1);
+SET @enr_mar_2024  = (SELECT id_matricula FROM matricula WHERE id_estudiante_matricula = @st_mariana AND id_grupo_matricula = @grp_10a_2024 LIMIT 1);
 
 SET @enr_mat_2024  = (SELECT id_matricula FROM matricula WHERE id_estudiante_matricula = @st_mateo AND id_grupo_matricula = @grp_10b_2024 LIMIT 1);
 
@@ -210,12 +225,12 @@ SET @enr_mat_2024  = (SELECT id_matricula FROM matricula WHERE id_estudiante_mat
 
 SET @sub_mat = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Matemáticas'         LIMIT 1);
 SET @sub_esp = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Español'             LIMIT 1);
-SET @sub_nat = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Ciencias Naturales' LIMIT 1);
-SET @sub_soc = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Ciencias Sociales'  LIMIT 1);
-SET @sub_ing = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Inglés'             LIMIT 1);
-SET @sub_qui = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Química'            LIMIT 1);
-SET @sub_fis = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Física'             LIMIT 1);
-SET @sub_fil = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Filosofía'          LIMIT 1);
+SET @sub_nat = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Ciencias Naturales'  LIMIT 1);
+SET @sub_soc = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Ciencias Sociales'   LIMIT 1);
+SET @sub_ing = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Inglés'              LIMIT 1);
+SET @sub_qui = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Química'             LIMIT 1);
+SET @sub_fis = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Física'              LIMIT 1);
+SET @sub_fil = (SELECT id_asignatura FROM asignatura WHERE nombre_asignatura = 'Filosofía'           LIMIT 1);
 
 
 -- ── 7. Scores (calificacion) ────────────────────────────────────────────────
@@ -287,6 +302,8 @@ VALUES
   ('3.8', 'NUMERICA', @sub_mat, '3.8', @enr_mar_2023), -- repeated year passed
   ('4.1', 'NUMERICA', @sub_esp, '4.1', @enr_mar_2023),
 
+  ('4.0', 'NUMERICA', @sub_mat, '4.0', @enr_mar_2024),
+
   -- --------------------------------------------------------------------------
   -- Mateo Morales (Night shift student)
   -- --------------------------------------------------------------------------
@@ -295,7 +312,7 @@ VALUES
   ('4.0', 'NUMERICA', @sub_fil, '4.0', @enr_mat_2024);
 
 
--- ── 8. Summary Query ────────────────────────────────────────────────────────
+-- ── 8. Summary Query — Students / Enrollments ───────────────────────────────
 
 SELECT e.id_estudiante,
        CONCAT(e.primer_nombre_estudiante, ' ', e.primer_apellido_estudiante) AS estudiante,
@@ -308,6 +325,7 @@ JOIN matricula m ON e.id_estudiante = m.id_estudiante_matricula
 JOIN grupo g ON m.id_grupo_matricula = g.id_grupo
 JOIN grado gr ON g.id_grado_grupo = gr.id_grado
 ORDER BY e.id_estudiante, g.anio_grupo;
+
 
 -- ── 9. Phones (telefono) ────────────────────────────────────────────────────
 --
@@ -388,10 +406,6 @@ SET @rec_andres = (SELECT id_receptor_certificado FROM receptor_certificado WHER
 
 
 -- ── 11. User-Phone links (usuario_telefono) ────────────────────────────────
---
--- Link each staff account to its own mobile. Composite unique index
--- uq_usuario_telefono prevents the same (user, phone) pair from being
--- inserted twice.
 
 SET @usr_master      = (SELECT id_usuario FROM usuario WHERE email_usuario = 'master.dev@test.local'      LIMIT 1);
 SET @usr_auxiliar    = (SELECT id_usuario FROM usuario WHERE email_usuario = 'auxiliar.dev@test.local'    LIMIT 1);
@@ -408,9 +422,6 @@ INSERT IGNORE INTO usuario_telefono (id_usuario, id_telefono) VALUES
 
 
 -- ── 12. Student-Phone links (estudiante_telefono) ──────────────────────────
---
--- Juan has TWO phones (mobile + home landline) to demonstrate that a single
--- student can own multiple phone records. The other students each have one.
 
 INSERT IGNORE INTO estudiante_telefono (id_estudiante, id_telefono) VALUES
   (@st_juan,      @tel_juan_mobile),
@@ -422,8 +433,6 @@ INSERT IGNORE INTO estudiante_telefono (id_estudiante, id_telefono) VALUES
 
 
 -- ── 13. Institution-Phone links (institucion_telefono) ─────────────────────
---
--- The single seeded institution gets a main line and an alternate line.
 
 INSERT IGNORE INTO institucion_telefono (id_institucion, id_telefono) VALUES
   (@inst_id, @tel_inst_main),
@@ -431,8 +440,6 @@ INSERT IGNORE INTO institucion_telefono (id_institucion, id_telefono) VALUES
 
 
 -- ── 14. CertificateRecipient-Phone links (receptor_certificado_telefono) ───
---
--- One mobile per acudiente.
 
 INSERT IGNORE INTO receptor_certificado_telefono (id_receptor_certificado, id_telefono) VALUES
   (@rec_carlos, @tel_rec_carlos),
@@ -441,10 +448,6 @@ INSERT IGNORE INTO receptor_certificado_telefono (id_receptor_certificado, id_te
 
 
 -- ── 15. Summary Query — Phone Ownership ────────────────────────────────────
---
--- Unions all four bridge tables so the full ownership map can be inspected
--- in a single result set. Useful to verify the single-owner rule visually
--- (each phone number should appear exactly once across the four branches).
 
 SELECT 'usuario' AS tipo_propietario,
        u.alias_usuario AS propietario,
@@ -482,11 +485,26 @@ JOIN telefono t             ON rt.id_telefono = t.id_telefono
 
 ORDER BY tipo_propietario, propietario;
 
--- ── 16. Certificates per enrollment ─────────────────────────────────────────
+
+-- ── 16. Certificates per enrollment (NEW ACT NUMBER FORMAT 'YY-NNN') ────────
 -- Requires @usr_master (issuing user), @inst_id, @rec_* and @enr_* — all
 -- already set by the earlier blocks. One certificate per enrollment
 -- (certificado.id_matricula_certificado has a UNIQUE constraint).
 -- estado_certificado ∈ {'EMITIDO','ANULADO','REIMPRESO'}.
+--
+-- ACT-NUMBER FORMAT:
+--   'YY-NNN'  — YY is the last 2 digits of the ISSUE YEAR, and NNN is a
+--   3-digit consecutive that resets every year and starts at 001.
+--   Must match certificateActNumber = /^\d{2}-\d{3}$/ (see
+--   src/utils/RegEx/certificateRegEx.js) and the auto-generation logic
+--   in CertificateServices._generateNextActNumber.
+--
+-- YEAR-BY-YEAR CONSECUTIVE MAP (as used below):
+--   2020 → 20-001                     (1 cert)
+--   2021 → 21-001, 21-002             (2 certs)
+--   2022 → 22-001, 22-002, 22-003     (3 certs)
+--   2023 → 23-001, 23-002, 23-003, 23-004  (4 certs)
+--   2024 → 24-001, 24-002, 24-003     (3 certs)
 
 SET @usr_master = (
   SELECT id_usuario FROM usuario
@@ -503,38 +521,82 @@ INSERT IGNORE INTO certificado
    estado_certificado)
 VALUES
   -- ── Juan Camilo Pérez (4 matriculas → 4 certificates) ──────────────────
-  ('2020-0001', '2020-11-30', @usr_master, @inst_id, @enr_juan_2020, @rec_carlos, 'EMITIDO'),
-  ('2021-0001', '2021-11-30', @usr_master, @inst_id, @enr_juan_2021, @rec_carlos, 'EMITIDO'),
-  ('2022-0001', '2022-11-30', @usr_master, @inst_id, @enr_juan_2022, @rec_lucia,  'EMITIDO'),
-  ('2023-0001', '2023-12-05', @usr_master, @inst_id, @enr_juan_2023, @rec_carlos, 'EMITIDO'),
+  -- 2020: first cert of the year
+  ('20-001', '2020-11-30', @usr_master, @inst_id, @enr_juan_2020, @rec_carlos, 'EMITIDO'),
+  -- 2021: first cert of the year
+  ('21-001', '2021-11-30', @usr_master, @inst_id, @enr_juan_2021, @rec_carlos, 'EMITIDO'),
+  -- 2022: first cert of the year
+  ('22-001', '2022-11-30', @usr_master, @inst_id, @enr_juan_2022, @rec_lucia,  'EMITIDO'),
+  -- 2023: first cert of the year
+  ('23-001', '2023-12-05', @usr_master, @inst_id, @enr_juan_2023, @rec_carlos, 'EMITIDO'),
 
   -- ── Valentina Restrepo (8° → 11°) ──────────────────────────────────────
-  ('2021-0002', '2021-11-30', @usr_master, @inst_id, @enr_val_2021,  @rec_lucia,  'EMITIDO'),
-  ('2022-0002', '2022-11-30', @usr_master, @inst_id, @enr_val_2022,  @rec_lucia,  'EMITIDO'),
-  ('2023-0002', '2023-11-30', @usr_master, @inst_id, @enr_val_2023,  @rec_lucia,  'EMITIDO'),
-  ('2024-0001', '2024-11-15', @usr_master, @inst_id, @enr_val_2024,  @rec_lucia,  'EMITIDO'),
+  -- 2021: second cert of the year
+  ('21-002', '2021-11-30', @usr_master, @inst_id, @enr_val_2021,  @rec_lucia,  'EMITIDO'),
+  -- 2022: second cert of the year
+  ('22-002', '2022-11-30', @usr_master, @inst_id, @enr_val_2022,  @rec_lucia,  'EMITIDO'),
+  -- 2023: second cert of the year
+  ('23-002', '2023-11-30', @usr_master, @inst_id, @enr_val_2023,  @rec_lucia,  'EMITIDO'),
+  -- 2024: first cert of the year
+  ('24-001', '2024-11-15', @usr_master, @inst_id, @enr_val_2024,  @rec_lucia,  'EMITIDO'),
 
   -- ── Santiago Caicedo (transfer + remedial) ─────────────────────────────
-  ('2023-0003', '2023-02-15', @usr_master, @inst_id, @enr_sant_2023, @rec_carlos, 'EMITIDO'),
-  ('2024-0002', '2024-11-30', @usr_master, @inst_id, @enr_sant_2024, @rec_carlos, 'EMITIDO'),
+  -- 2023: third cert of the year
+  ('23-003', '2023-02-15', @usr_master, @inst_id, @enr_sant_2023, @rec_carlos, 'EMITIDO'),
+  -- 2024: second cert of the year
+  ('24-002', '2024-11-30', @usr_master, @inst_id, @enr_sant_2024, @rec_carlos, 'EMITIDO'),
 
   -- ── Mariana Osorio (repeated 9°) ───────────────────────────────────────
-  -- 2022 was not passed → ANULADO; 2023 approved → EMITIDO; 2024 → EMITIDO
-  ('2022-0003', '2022-11-30', @usr_master, @inst_id, @enr_mar_2022,  @rec_lucia,  'ANULADO'),
-  ('2023-0004', '2023-11-30', @usr_master, @inst_id, @enr_mar_2023,  @rec_lucia,  'EMITIDO'),
+  -- 2022: third cert of the year — failed year → ANULADO
+  ('22-003', '2022-11-30', @usr_master, @inst_id, @enr_mar_2022,  @rec_lucia,  'ANULADO'),
+  -- 2023: fourth cert of the year — approved → EMITIDO
+  ('23-004', '2023-11-30', @usr_master, @inst_id, @enr_mar_2023,  @rec_lucia,  'EMITIDO'),
+  -- 2024: fourth cert of the year — promoted → EMITIDO
+  ('24-003', '2024-11-30', @usr_master, @inst_id, @enr_mar_2024,  @rec_lucia,  'EMITIDO'),
 
   -- ── Mateo Morales (night shift) ────────────────────────────────────────
-  ('2024-0003', '2024-02-20', @usr_master, @inst_id, @enr_mat_2024,  @rec_andres, 'EMITIDO');
+  -- 2024: fifth cert of the year
+  ('24-004', '2024-02-20', @usr_master, @inst_id, @enr_mat_2024,  @rec_andres, 'EMITIDO');
 
--- Verification: one row per student, with their enrollment/grade/group
-SELECT c.id_certificado, c.numero_acta_certificado, c.estado_certificado,
-       CONCAT(e.primer_nombre_estudiante,' ',e.primer_apellido_estudiante) AS estudiante,
-       gr.nombre_grado, g.anio_grupo, g.nombre_grupo,
-       CONCAT(r.nombre_receptor_certificado,' ',r.apellidos_receptor_certificado) AS receptor
+
+-- ── 17. Verification — Certificates with student / grade / group ────────────
+--
+-- Confirms the format 'YY-NNN' is respected and every certificate links to
+-- a real student, grade, group and recipient.
+
+SELECT c.id_certificado,
+       c.numero_acta_certificado,
+       c.estado_certificado,
+       c.fecha_emision_certificado,
+       CONCAT(e.primer_nombre_estudiante, ' ', e.primer_apellido_estudiante) AS estudiante,
+       gr.nombre_grado,
+       g.anio_grupo,
+       g.nombre_grupo,
+       g.jornada,
+       CONCAT(r.nombre_receptor_certificado, ' ', r.apellidos_receptor_certificado) AS receptor
 FROM certificado c
 JOIN matricula  m  ON c.id_matricula_certificado = m.id_matricula
 JOIN estudiante e  ON m.id_estudiante_matricula  = e.id_estudiante
 JOIN grupo      g  ON m.id_grupo_matricula       = g.id_grupo
 JOIN grado      gr ON g.id_grado_grupo           = gr.id_grado
 LEFT JOIN receptor_certificado r ON c.id_receptor_certificado = r.id_receptor_certificado
-ORDER BY estudiante, g.anio_grupo;
+ORDER BY c.numero_acta_certificado;
+
+-- Expected output (13 rows, one per seeded certificate):
+--
+-- numero_acta | estudiante        | grado     | anio | grupo | jornada   | estado
+-- ------------+-------------------+-----------+------+-------+-----------+---------
+-- 20-001      | Juan Pérez        | Sexto     | 2020 | 6-A   | Diurna    | EMITIDO
+-- 21-001      | Juan Pérez        | Séptimo   | 2021 | 7-A   | Diurna    | EMITIDO
+-- 21-002      | Valentina Restrepo| Octavo    | 2021 | 8-B   | Diurna    | EMITIDO
+-- 22-001      | Juan Pérez        | Séptimo   | 2022 | 7-B   | Diurna    | EMITIDO
+-- 22-002      | Valentina Restrepo| Noveno    | 2022 | 9-A   | Diurna    | EMITIDO
+-- 22-003      | Mariana Osorio    | Noveno    | 2022 | 9-A   | Diurna    | ANULADO
+-- 23-001      | Juan Pérez        | Octavo    | 2023 | 8-A   | Diurna    | EMITIDO
+-- 23-002      | Valentina Restrepo| Décimo    | 2023 | 10-A  | Diurna    | EMITIDO
+-- 23-003      | Santiago Caicedo  | Noveno    | 2023 | 9-B   | Diurna    | EMITIDO
+-- 23-004      | Mariana Osorio    | Noveno    | 2023 | 9-B   | Diurna    | EMITIDO
+-- 24-001      | Valentina Restrepo| Undécimo  | 2024 | 11-A  | Diurna    | EMITIDO
+-- 24-002      | Santiago Caicedo  | Décimo    | 2024 | 10-B  | Nocturna  | EMITIDO
+-- 24-003      | Mariana Osorio    | Décimo    | 2024 | 10-A  | Diurna    | EMITIDO
+-- 24-004      | Mateo Morales     | Décimo    | 2024 | 10-B  | Nocturna  | EMITIDO
