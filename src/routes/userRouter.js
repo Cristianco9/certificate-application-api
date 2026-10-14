@@ -43,6 +43,7 @@ import { updateOneUser } from '../controllers/user/update.js';
 import { deleteOneUser } from '../controllers/user/delete.js';
 import { listOneUser } from '../controllers/user/listOne.js';
 import { listAllUsers } from '../controllers/user/listAll.js';
+import { listSignerCandidates } from '../controllers/user/listSignerCandidates.js';
 
 // Create a new Router instance dedicated to the user resource
 const userRouter = Router();
@@ -112,6 +113,22 @@ userRouter.delete(
   checkRole(['Máster', 'Administrador']),
   validatorHandler(userSchema.deleteUser, 'body'),
   deleteOneUser
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /get-signer-candidates  →  Minimal user list for certificate signers
+//
+// Returns only the fields the certificate needs (name, document, role,
+// municipality) for users whose role is one of Rector / Funcionario /
+// Administrador. Unlike /list-all, this endpoint does NOT expose email,
+// account status, or last-login.
+// ─────────────────────────────────────────────────────────────────────────────
+userRouter.post(
+  '/get-signer-candidates',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador', 'Rector', 'Funcionario']),
+  listSignerCandidates
 );
 
 export default userRouter;

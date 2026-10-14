@@ -14,6 +14,7 @@ import { User } from '../db/models/user.js';
 import { Role } from '../db/models/role.js';
 import { DocumentType } from '../db/models/documentType.js';
 import { Municipality } from '../db/models/municipality.js';
+import { Department } from '../db/models/department.js';
 import { AcademicLevel } from '../db/models/academicLevel.js';
 import { Gender } from '../db/models/gender.js';
 // import the promise to encrypt the user's password
@@ -247,6 +248,86 @@ export class UserServices {
       throw Boom.boomify(error, { message: 'Unable to find users' });
     }
   }
+
+async listSignerCandidates() {
+  try {
+    const users = await User.findAll({
+      include: [
+        {
+          model: DocumentType,
+          as: 'documentType',
+          attributes: ['id', 'name'],
+          required: false,
+        },
+        {
+          model: Municipality,
+          as: 'municipality',
+          attributes: ['id', 'name'],
+          required: false,
+          // Nested department so the certificate can print
+          // "City - Department" for the document's issuing place.
+          include: [
+            {
+              model: Department,
+              as: 'department',
+              attributes: ['id', 'name'],
+              required: false,
+            },
+          ],
+        },
+        {
+          model: Role,
+          as: 'role',
+          attributes: ['id', 'name'],
+          required: true,
+        },
+        {
+          model: AcademicLevel,
+          as: 'academicLevel',
+          attributes: ['id', 'name', 'abbreviation'],
+          required: false,
+        },
+      ],
+      order: [['firstName', 'ASC']],
+    });
+
+    const SIGNER_ROLES = new Set(['Rector', 'Funcionario', 'Administrador']);
+
+    return users
+      .filter((u) => SIGNER_ROLES.has(u.role?.name))
+      .map((u) => ({
+        id: u.id,
+        firstName: u.firstName,
+        lastName: u.lastName,
+        documentNumber: u.documentNumber,
+        documentType: u.documentType
+          ? { id: u.documentType.id, name: u.documentType.name }
+          : null,
+        municipality: u.municipality
+          ? {
+              id: u.municipality.id,
+              name: u.municipality.name,
+              department: u.municipality.department
+                ? {
+                    id: u.municipality.department.id,
+                    name: u.municipality.department.name,
+                  }
+                : null,
+            }
+          : null,
+        academicLevel: u.academicLevel
+          ? {
+              id: u.academicLevel.id,
+              name: u.academicLevel.name,
+              abbreviation: u.academicLevel.abbreviation,
+            }
+          : null,
+        role: u.role ? { id: u.role.id, name: u.role.name } : null,
+      }));
+  } catch (error) {
+    throw Boom.boomify(error, { message: 'Unable to list signer candidates' });
+  }
+}
 
   // ==========================================================
   // STATIC UTILITIES
