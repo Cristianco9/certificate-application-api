@@ -95,7 +95,7 @@ phoneRouter.post(
   '/get-by-number',
   checkApiKey,
   authAppVerifyToken,
-  checkRole(['Máster', 'Administrador']),
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario', 'Auxiliar']),
   validatorHandler(phoneSchema.getPhoneByNumber, 'body'),
   getPhoneByNumber
 );
