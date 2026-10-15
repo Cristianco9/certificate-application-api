@@ -30,11 +30,11 @@ export const resetPassword = async (req, res, next) => {
   const { email, documentNumber, newPassword } = req.body;
 
   // Instantiate the service that manages user operations
-  const AuthenticationManager = new AuthenticationServices();
+  const authenticationManager = new AuthenticationServices();
 
   try {
     // Attempt to reset the password
-    const response = await AuthenticationManager.resetPassword(email, documentNumber, newPassword);
+    const response = await authenticationManager.resetPassword(email, documentNumber, newPassword);
 
     if (response.status === 'PASSWORD RESET SUCCESSFULLY') {
       return res.status(200).json({
