@@ -55,21 +55,6 @@ module.exports = {
         onUpdate: 'CASCADE',
       },
 
-      // Foreign key to matricula. Unique because a given enrollment can only
-      // ever have one certificate issued for it (reprints reuse the same
-      // record) — RESTRICT on delete
-      id_matricula_certificado: {
-        type: Sequelize.INTEGER,
-        allowNull: false,
-        unique: true,
-        references: {
-          model: 'matricula',
-          key: 'id_matricula',
-        },
-        onDelete: 'RESTRICT',
-        onUpdate: 'CASCADE',
-      },
-
       // Foreign key to receptor_certificado (optional) — SET NULL on delete
       id_receptor_certificado: {
         type: Sequelize.INTEGER,

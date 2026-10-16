@@ -54,18 +54,6 @@ export const Certificate = sequelize.define(CERTIFICATE_TABLE, {
       key: 'id_institucion',
     },
   },
-  // Foreign key to Enrollment. Unique because a given enrollment can only
-  // ever have one certificate issued for it (reprints reuse the same record).
-  enrollmentId: {
-    type: DataTypes.INTEGER,
-    allowNull: false,
-    unique: true,
-    field: 'id_matricula_certificado',
-    references: {
-      model: 'matricula',
-      key: 'id_matricula',
-    },
-  },
   // Foreign key to Certificate Recipient
   recipientId: {
     type: DataTypes.INTEGER,

@@ -32,6 +32,7 @@ import { Score }                 from './score.js';
 
 import { CertificateRecipient }  from './certificateRecipient.js';
 import { Certificate }           from './certificate.js';
+import { CertificateEnrollment } from './certificateEnrollment.js';
 import { CertificateSignature }  from './certificateSignature.js';
 
 export function setupAssociations() {
@@ -343,8 +344,12 @@ export function setupAssociations() {
   // CERTIFICATE
   // FK: userId (allowNull: false) -> User
   // FK: institutionId (allowNull: false) -> Institution
-  // FK: enrollmentId (allowNull: false, unique: true) -> Enrollment
   // FK: recipientId (allowNull: true) -> CertificateRecipient
+  //
+  // NOTE: There is no direct enrollmentId FK on 'certificado' anymore.
+  // A certificate now covers ONE OR MANY enrollments through the
+  // bridge table 'certificado_matricula'. See the CERTIFICATE-ENROLLMENT
+  // section below.
   // ============================================================
 
   // A user can issue many certificates
@@ -375,22 +380,6 @@ export function setupAssociations() {
     as: 'institution',
   });
 
-  // An enrollment has one certificate (enrollmentId is unique: true in the
-  // model, so a reprint reuses the same certificate record rather than
-  // creating a new one)
-  Enrollment.hasOne(Certificate, {
-    foreignKey: 'enrollmentId',
-    sourceKey: 'id',
-    as: 'certificate',
-  });
-
-  // A certificate belongs to one enrollment
-  Certificate.belongsTo(Enrollment, {
-    foreignKey: 'enrollmentId',
-    targetKey: 'id',
-    as: 'enrollment',
-  });
-
   // A certificate recipient can have many certificates
   CertificateRecipient.hasMany(Certificate, {
     foreignKey: 'recipientId',
@@ -403,6 +392,56 @@ export function setupAssociations() {
     foreignKey: 'recipientId',
     targetKey: 'id',
     as: 'recipient',
+  });
+
+  // ============================================================
+  // CERTIFICATE ↔ ENROLLMENT (many-to-many via bridge)
+  //
+  // Business rules enforced by the bridge table 'certificado_matricula':
+  //   • A certificate can carry MANY enrollments (one PDF, N report cards).
+  //   • An enrollment can belong to AT MOST ONE certificate — enforced
+  //     by the UNIQUE index on bridge.id_matricula.
+  // ============================================================
+
+  // A certificate covers many enrollments (through the junction table)
+  Certificate.belongsToMany(Enrollment, {
+    through: CertificateEnrollment,
+    foreignKey: 'certificateId',
+    otherKey: 'enrollmentId',
+    as: 'enrollments',
+  });
+
+  // An enrollment belongs to at most one certificate (through the
+  // junction table). In practice, per the UNIQUE rule above, an
+  // enrollment is only ever linked to a single certificate record.
+  Enrollment.belongsToMany(Certificate, {
+    through: CertificateEnrollment,
+    foreignKey: 'enrollmentId',
+    otherKey: 'certificateId',
+    as: 'certificates',
+  });
+
+  // Direct associations to the junction table (for eager loading / guards)
+  Certificate.hasMany(CertificateEnrollment, {
+    foreignKey: 'certificateId',
+    sourceKey: 'id',
+    as: 'certificateEnrollments',
+  });
+  CertificateEnrollment.belongsTo(Certificate, {
+    foreignKey: 'certificateId',
+    targetKey: 'id',
+    as: 'certificate',
+  });
+
+  Enrollment.hasMany(CertificateEnrollment, {
+    foreignKey: 'enrollmentId',
+    sourceKey: 'id',
+    as: 'certificateEnrollments',
+  });
+  CertificateEnrollment.belongsTo(Enrollment, {
+    foreignKey: 'enrollmentId',
+    targetKey: 'id',
+    as: 'enrollment',
   });
 
   // ============================================================
