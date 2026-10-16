@@ -270,6 +270,240 @@ export class CertificateServices {
   }
 
   /**
+   * Lists certificates for the repository page, with pagination and
+   * optional filters.
+   *
+   * Uses a three-query strategy to keep pagination correct with a
+   * many-to-many include (Certificate ↔ Enrollment):
+   *
+   *   1. Collect the paginated certificate IDs, applying every filter.
+   *   2. Count the total matching certificates (for the pager).
+   *   3. Fetch the full records for the collected IDs.
+   *
+   * `findAndCountAll` alone would produce duplicated rows (one per
+   * matching enrollment) and a misleading `LIMIT`, so the ID-first
+   * approach is preferred here — even at the cost of one extra round
+   * trip, which is negligible compared to the alternative of an
+   * incorrect page count.
+   *
+   * @param {Object} [options]
+   * @param {number} [options.offset=0]  Rows to skip.
+   * @param {number} [options.limit=20]  Rows per page.
+   * @param {Object} [options.filters]   Optional filters.
+   * @returns {Promise<{total: number, records: Object[], offset: number, limit: number}>}
+   */
+  async listForRepository({ offset = 0, limit = 20, filters = {} } = {}) {
+    try {
+      // ── Certificate-level where ─────────────────────────────────────
+      const certificateWhere = {};
+      if (filters.actNumber) {
+        certificateWhere.actNumber = { [Op.like]: `%${filters.actNumber}%` };
+      }
+      if (filters.issuerId) certificateWhere.userId = filters.issuerId;
+      if (filters.status) certificateWhere.status = filters.status;
+      if (filters.institutionId) {
+        certificateWhere.institutionId = filters.institutionId;
+      }
+      if (filters.issueDateFrom || filters.issueDateTo) {
+        certificateWhere.issueDate = {};
+        if (filters.issueDateFrom) {
+          certificateWhere.issueDate[Op.gte] = filters.issueDateFrom;
+        }
+        if (filters.issueDateTo) {
+          certificateWhere.issueDate[Op.lte] = filters.issueDateTo;
+        }
+      }
+
+      // ── Student-level where (joined through enrollments) ────────────
+      const studentWhere = {};
+      if (filters.firstName) {
+        studentWhere.firstName = { [Op.like]: `%${filters.firstName}%` };
+      }
+      if (filters.secondName) {
+        studentWhere.middleName = { [Op.like]: `%${filters.secondName}%` };
+      }
+      if (filters.firstLastName) {
+        studentWhere.firstLastName = { [Op.like]: `%${filters.firstLastName}%` };
+      }
+      if (filters.secondLastName) {
+        studentWhere.secondLastName = { [Op.like]: `%${filters.secondLastName}%` };
+      }
+      if (filters.documentNumber) {
+        studentWhere.documentNumber = filters.documentNumber;
+      }
+      if (filters.documentTypeId) {
+        studentWhere.documentTypeId = filters.documentTypeId;
+      }
+      if (filters.birthDate) studentWhere.birthDate = filters.birthDate;
+
+      // ── Group-level where (joined through enrollments) ──────────────
+      const groupWhere = {};
+      if (filters.year) groupWhere.year = filters.year;
+      if (filters.gradeId) groupWhere.gradeId = filters.gradeId;
+      if (filters.group) groupWhere.name = { [Op.like]: `%${filters.group}%` };
+      if (filters.jornada) groupWhere.shift = filters.jornada;
+
+      // ── Recipient-level where ───────────────────────────────────────
+      const recipientWhere = {};
+      if (filters.recipientName) {
+        recipientWhere[Op.or] = [
+          { firstName: { [Op.like]: `%${filters.recipientName}%` } },
+          { lastName: { [Op.like]: `%${filters.recipientName}%` } },
+        ];
+      }
+      if (filters.recipientDocument) {
+        recipientWhere.documentNumber = filters.recipientDocument;
+      }
+
+      const studentHasFilter = Object.keys(studentWhere).length > 0;
+      const groupHasFilter = Object.keys(groupWhere).length > 0;
+      const enrollmentRequired = studentHasFilter || groupHasFilter;
+      const recipientHasFilter = Object.keys(recipientWhere).length > 0;
+
+      // Include used ONLY to filter (attributes: []) — no data is
+      // returned from it in the ID query, so the SQL stays cheap.
+      const enrollmentFilterInclude = {
+        model: Enrollment,
+        as: 'enrollments',
+        through: { attributes: [] },
+        attributes: [],
+        required: enrollmentRequired,
+        include: [
+          {
+            model: Student,
+            as: 'student',
+            attributes: [],
+            required: studentHasFilter,
+            where: studentHasFilter ? studentWhere : undefined,
+          },
+          {
+            model: Group,
+            as: 'group',
+            attributes: [],
+            required: groupHasFilter,
+            where: groupHasFilter ? groupWhere : undefined,
+          },
+        ],
+      };
+
+      // ── 1. Paginated certificate IDs ────────────────────────────────
+      const idRows = await Certificate.findAll({
+        where: certificateWhere,
+        attributes: ['id'],
+        include: enrollmentFilterInclude,
+        order: [['id', 'DESC']],
+        limit,
+        offset,
+        subQuery: false,
+        // Group by the outer primary key so a certificate with N
+        // matching enrollments collapses back to 1 row. `id` is the
+        // SELECT alias (`certificado.id_certificado AS id`), which MySQL
+        // resolves against the select list — unlike the string
+        // 'Certificate.id', which Sequelize emits verbatim and MySQL
+        // then rejects with "Unknown column 'Certificate.id' in
+        // 'group statement'".
+        group: ['id'],
+      });
+
+      const ids = idRows.map((row) => row.id);
+
+      // ── 2. Total count ──────────────────────────────────────────────
+      //
+      // `distinct: true` makes Sequelize emit
+      //   COUNT(DISTINCT(`certificado`.`<col>`))
+      // and — unlike `attributes`, `order` or `group` — the `col`
+      // option is treated as a RAW column reference, NOT as a model
+      // attribute. Passing `'id'` therefore produced
+      //   COUNT(DISTINCT(`certificado`.`id`))
+      // and MySQL rejected it with "Unknown column 'certificado.id'
+      // in 'field list'", because the real column is
+      // `id_certificado` (the model maps `id → id_certificado` via
+      // the `field:` option, but `col` skips that mapping).
+      //
+      // Fix: use the PHYSICAL column name. Alternatively, drop `col`
+      // entirely and let Sequelize default to the model's
+      // `primaryKeyField` (`id_certificado`), which produces the same
+      // SQL.
+      const total = await Certificate.count({
+        where: certificateWhere,
+        include: enrollmentFilterInclude,
+        distinct: true,
+        col: 'id_certificado',
+      });
+
+      if (ids.length === 0) {
+        return { total, records: [], offset, limit };
+      }
+
+      // ── 3. Full records for the collected IDs ──────────────────────
+      const records = await Certificate.findAll({
+        where: { id: { [Op.in]: ids } },
+        include: [
+          {
+            model: User,
+            as: 'issuer',
+            attributes: ['id', 'firstName', 'lastName'],
+          },
+          {
+            model: Institution,
+            as: 'institution',
+            attributes: ['id', 'name'],
+          },
+          {
+            model: CertificateRecipient,
+            as: 'recipient',
+            attributes: [
+              'id',
+              'firstName',
+              'middleName',
+              'lastName',
+              'secondLastName',
+              'documentNumber',
+            ],
+            required: recipientHasFilter,
+            where: recipientHasFilter ? recipientWhere : undefined,
+          },
+          {
+            model: Enrollment,
+            as: 'enrollments',
+            through: { attributes: [] },
+            attributes: ['id', 'enrollmentDate'],
+            include: [
+              {
+                model: Student,
+                as: 'student',
+                attributes: [
+                  'id',
+                  'firstName',
+                  'middleName',
+                  'firstLastName',
+                  'secondLastName',
+                  'documentNumber',
+                ],
+              },
+              {
+                model: Group,
+                as: 'group',
+                attributes: ['id', 'name', 'year', 'shift'],
+                include: [
+                  { model: Grade, as: 'grade', attributes: ['id', 'name'] },
+                ],
+              },
+            ],
+          },
+        ],
+        order: [['id', 'DESC']],
+      });
+
+      return { total, records, offset, limit };
+    } catch (error) {
+      throw Boom.boomify(error, {
+        message: 'Unable to search certificates for the repository',
+      });
+    }
+  }
+
+  /**
    * Given an enrollmentId, return the certificate that most recently
    * certified it — the highest certificateId among all issuances.
    *

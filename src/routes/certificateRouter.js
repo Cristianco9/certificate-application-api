@@ -53,6 +53,7 @@ import { listCertificatesByInstitution } from '../controllers/certificate/listBy
 import { listCertificatesByRecipient } from '../controllers/certificate/listByRecipient.js';
 import { listCertificatesByStatus } from '../controllers/certificate/listByStatus.js';
 import { getNextCertificateActNumber } from '../controllers/certificate/getNextActNumber.js';
+import { listCertificatesPaginated } from '../controllers/certificate/listPaginated.js';
 
 // Create a new Router instance dedicated to the certificate resource
 const certificateRouter = Router();
@@ -97,6 +98,24 @@ certificateRouter.post(
   checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
   validatorHandler(certificateSchema.getCertificateById, 'body'),
   listOneCertificate
+);
+
+// ─────────────────────────────────────────────────────────────────────────────
+// POST /list-paginated  →  List certificates with pagination + filters
+// Body: { offset?, limit?, filters? }
+//
+// Backs the repository page. Uses offset/limit server-side instead of
+// returning every certificate in one payload — the historical archive
+// grows without bound and a client-side pagination over thousands of
+// rows is not viable.
+// ─────────────────────────────────────────────────────────────────────────────
+certificateRouter.post(
+  '/list-paginated',
+  checkApiKey,
+  authAppVerifyToken,
+  checkRole(['Máster', 'Administrador', 'Rector', 'Secretario']),
+  validatorHandler(certificateSchema.listPaginated, 'body'),
+  listCertificatesPaginated
 );
 
 // ─────────────────────────────────────────────────────────────────────────────

@@ -201,4 +201,50 @@ export const certificateSchema = {
   deleteCertificate: Joi.object({
     id: joiId.required(),
   }),
+
+  // POST /certificates/list-paginated
+  // Body: { offset?, limit?, filters?: {...} }
+  //
+  // Repository listing. Every filter is optional — the operator can hit
+  // "Buscar" with no filters and page through the whole history. The
+  // schema validates shapes only; cross-field consistency (e.g. a
+  // documentNumber that is longer than 10 digits when the type is a
+  // cédula) is enforced by the backend service where it belongs.
+  listPaginated: Joi.object({
+    offset: Joi.number().integer().min(0).default(0),
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    filters: Joi.object({
+      // Certificate
+      actNumber: Joi.string().allow('').optional(),
+      issuerId: Joi.string().pattern(/^\d{1,10}$/).allow('').optional(),
+      status: Joi.string()
+        .valid('EMITIDO', 'ANULADO', 'REIMPRESO')
+        .allow('')
+        .optional(),
+      institutionId: Joi.string().pattern(/^\d{1,10}$/).allow('').optional(),
+      issueDateFrom: Joi.string().allow('').optional(),
+      issueDateTo: Joi.string().allow('').optional(),
+
+      // Student
+      firstName: Joi.string().allow('').optional(),
+      secondName: Joi.string().allow('').optional(),
+      firstLastName: Joi.string().allow('').optional(),
+      secondLastName: Joi.string().allow('').optional(),
+      documentNumber: Joi.string().allow('').optional(),
+      documentTypeId: Joi.string().pattern(/^\d{1,10}$/).allow('').optional(),
+      birthDate: Joi.string().allow('').optional(),
+
+      // Enrollment (group)
+      year: Joi.string().pattern(/^(19\d{2}|20\d{2})$/).allow('').optional(),
+      gradeId: Joi.string().pattern(/^\d{1,10}$/).allow('').optional(),
+      group: Joi.string().allow('').optional(),
+      jornada: Joi.string().valid('Diurna', 'Nocturna').allow('').optional(),
+
+      // Recipient
+      recipientName: Joi.string().allow('').optional(),
+      recipientDocument: Joi.string().allow('').optional(),
+    })
+      .optional()
+      .default({}),
+  }),
 };
