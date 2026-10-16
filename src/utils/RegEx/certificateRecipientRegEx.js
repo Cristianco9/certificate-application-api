@@ -6,6 +6,7 @@
 // VARCHAR(50) column size defined in
 // receptor_certificado.nombre_receptor_certificado
 export const certificateRecipientFirstName = /^[\p{L}]{3,50}$/u;
+
 // The pattern ensures the recipient middle name, when provided,
 // contains only letters (both uppercase and lowercase, including
 // Spanish accented characters and 'ñ', via the Unicode letter
@@ -16,7 +17,7 @@ export const certificateRecipientFirstName = /^[\p{L}]{3,50}$/u;
 // receptor_certificado.segundo_nombre_receptor_certificado
 export const certificateRecipientMiddleName = /^([\p{L}]{3,50})?$/u;
 
-// The pattern ensures the recipient last name contains only letters
+// The pattern ensures the recipient first surname contains only letters
 // (both uppercase and lowercase, including Spanish accented characters
 // and 'ñ', via the Unicode letter category \p{L}),
 // with no spaces (a single surname),
@@ -25,13 +26,13 @@ export const certificateRecipientMiddleName = /^([\p{L}]{3,50})?$/u;
 // receptor_certificado.apellidos_receptor_certificado
 export const certificateRecipientLastName = /^[\p{L}]{3,50}$/u;
 
-// The pattern ensures the recipient second last name, when provided,
+// The pattern ensures the recipient second surname, when provided,
 // contains only letters (both uppercase and lowercase, including
 // Spanish accented characters and 'ñ', via the Unicode letter
 // category \p{L}), with no spaces (a single surname), and is
 // between 3 to 50 characters long. This field is OPTIONAL: an empty
 // string is also accepted, since not every recipient has a second
-// last name, matching the VARCHAR(50) column size defined in
+// surname, matching the VARCHAR(50) column size defined in
 // receptor_certificado.segundo_apellido_receptor_certificado
 export const certificateRecipientSecondLastName = /^([\p{L}]{3,50})?$/u;
 
@@ -42,6 +43,16 @@ export const certificateRecipientSecondLastName = /^([\p{L}]{3,50})?$/u;
 // matching the VARCHAR(20) column size defined in
 // receptor_certificado.identificacion_receptor_certificado
 export const certificateRecipientDocumentNumber = /^(\d{6,10}|[a-zA-Z0-9]{6,20})$/;
+
+// The pattern ensures the recipient relationship matches exactly one
+// of the nine fixed values used by the institution. This is an exact
+// literal alternation rather than a character-range pattern, since the
+// field represents a closed set of kinship/relationship roles rather
+// than free-form text. The literal parentheses in 'Hermano(a)' etc.
+// are escaped so they are matched literally, not as regex grouping.
+// Matches the ENUM declared in
+// receptor_certificado.relacion_receptor_certificado
+export const certificateRecipientRelationship = /^(Padre|Madre|Hermano\(a\)|Tío\(a\)|Abuelo\(a\)|Primo\(a\)|Cónyuge|Acudiente|Otro)$/;
 
 // The pattern ensures the recipient address contains letters
 // (both uppercase and lowercase, including Spanish accented characters
