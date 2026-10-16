@@ -13,11 +13,17 @@
 //
 // The 'actNumber' is NOT part of newCertificateData: it is generated
 // server-side by the service from the current year's last two digits
-// plus a 3-digit consecutive number (e.g. '26-001'). 'userId',
-// 'institutionId' and 'enrollmentId' are immutable after creation
-// because they are the identity of the certificate — an enrollmentId
-// is UNIQUE (a reprint reuses the same certificate record), so changing
-// it is semantically a delete + create.
+// plus a 3-digit consecutive number (e.g. '26-001'). 'userId' and
+// 'institutionId' are immutable after creation because they are the
+// identity of the certificate.
+//
+// A certificate now covers ONE OR MANY enrollments via the bridge table
+// 'certificado_matricula'. That is why 'enrollmentIds' is an ARRAY of
+// digit-strings (min 1, no duplicates) in newCertificateData, and why
+// 'enrollmentId' is intentionally NOT a mutable field in
+// updateCertificateData — the set of enrollments tied to a certificate
+// is fixed at creation time. Reassigning them is semantically a
+// delete + create.
 // ─────────────────────────────────────────────────────────────────────────────
 
 import Joi from 'joi';
@@ -72,8 +78,9 @@ const joiInstitutionId = Joi.string().pattern(certificateInstitutionId).messages
   'string.pattern.base': 'El id de la institución debe contener solo dígitos (1 a 10 dígitos).',
 });
 
-// Backs Certificate.enrollmentId ('id_matricula_certificado'). UNIQUE:
-// a given enrollment can only ever have one certificate issued for it.
+// Backs a single element of CertificateServices.createOne's enrollmentIds
+// array. Each element maps to bridge.id_matricula, which is UNIQUE — an
+// enrollment can belong to at most one certificate.
 const joiEnrollmentId = Joi.string().pattern(certificateEnrollmentId).messages({
   'string.base': 'El id de la matrícula debe ser una cadena de texto.',
   'string.pattern.base': 'El id de la matrícula debe contener solo dígitos (1 a 10 dígitos).',
@@ -113,8 +120,10 @@ export const certificateSchema = {
   }),
 
   // POST /certificates/get-by-enrollment (body: { enrollmentId })
-  // Returns a single record, not a collection, because enrollmentId is
-  // UNIQUE on 'certificado'.
+  // Returns the single certificate (if any) that owns the given
+  // enrollment, resolved through the bridge table 'certificado_matricula'.
+  // The bridge enforces UNIQUE on id_matricula, so at most one certificate
+  // can ever be returned.
   getCertificateByEnrollment: Joi.object({
     enrollmentId: joiEnrollmentId.required(),
   }),
@@ -140,15 +149,34 @@ export const certificateSchema = {
   }),
 
   // POST /certificates (body: { issueDate, userId, institutionId,
-  //                              enrollmentId, recipientId?, status? })
+  //                              enrollmentIds: [...], recipientId?, status? })
   // Validates CertificateServices.createOne(newCertificate). The
   // 'actNumber' is auto-generated server-side. 'status' defaults to
   // 'EMITIDO' in the service when omitted.
+  //
+  // 'enrollmentIds' is the new shape: an ARRAY of 1..N enrollment ids
+  // that must all be valid digit-strings, must not contain duplicates,
+  // and must all currently be unowned by any other certificate (the
+  // service rejects already-linked enrollments with a Boom.conflict).
+  // This is what makes a single act number cover many enrollments and
+  // a single PDF render many report cards.
   newCertificateData: Joi.object({
     issueDate: joiIssueDate.required(),
     userId: joiUserId.required(),
     institutionId: joiInstitutionId.required(),
-    enrollmentId: joiEnrollmentId.required(),
+
+    enrollmentIds: Joi.array()
+      .items(joiEnrollmentId)
+      .min(1)
+      .unique()
+      .required()
+      .messages({
+        'array.base': 'Los ids de matrícula deben enviarse como un arreglo.',
+        'array.min': 'Debe seleccionar al menos una matrícula.',
+        'array.unique': 'No se permiten matrículas duplicadas en el mismo certificado.',
+        'any.required': 'Debe enviar al menos una matrícula (enrollmentIds).',
+      }),
+
     recipientId: joiRecipientId.optional().allow(null, ''),
     status: joiStatus.optional(),
   }),
@@ -156,8 +184,10 @@ export const certificateSchema = {
   // PATCH /certificates (body: { id, issueDate?, recipientId?, status? })
   // Validates BOTH arguments of CertificateServices.updateOne
   // (certificateId, newCertificateData) in a single object. 'userId',
-  // 'institutionId' and 'enrollmentId' are intentionally NOT mutable:
-  // they are the certificate's identity, and 'enrollmentId' is UNIQUE.
+  // 'institutionId' and the enrollment set are intentionally NOT
+  // mutable: the first two are the certificate's identity, and the
+  // enrollment set is fixed at creation time (changing it is
+  // semantically a delete + create, per the UNIQUE rule on the bridge).
   updateCertificateData: Joi.object({
     id: joiId.required(),
     issueDate: joiIssueDate,

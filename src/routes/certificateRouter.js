@@ -59,7 +59,11 @@ const certificateRouter = Router();
 
 // ─────────────────────────────────────────────────────────────────────────────
 // POST /create  →  Issue a new certificate (act number auto-generated)
-// Body: { issueDate, userId, institutionId, enrollmentId, recipientId?, status? }
+// Body: { issueDate, userId, institutionId, enrollmentIds, recipientId?, status? }
+//
+// 'enrollmentIds' is an ARRAY of 1..N enrollment ids — one act number can
+// cover many enrollments, each of which is stored as a row in the
+// 'certificado_matricula' bridge table. See CertificateServices.createOne.
 // ─────────────────────────────────────────────────────────────────────────────
 certificateRouter.post(
   '/create',
@@ -122,9 +126,10 @@ certificateRouter.post(
 );
 
 // ─────────────────────────────────────────────────────────────────────────────
-// POST /get-by-enrollment  →  Retrieve the single certificate (if any) for a
-// given enrollment. Returns one record, not a collection, because
-// enrollmentId is UNIQUE on 'certificado'.
+// POST /get-by-enrollment  →  Retrieve the single certificate (if any) that
+// owns the given enrollment. Returns one record, not a collection, because
+// the bridge table 'certificado_matricula' enforces UNIQUE on id_matricula —
+// an enrollment can belong to at most one certificate.
 // Body: { enrollmentId }
 // ─────────────────────────────────────────────────────────────────────────────
 certificateRouter.post(
