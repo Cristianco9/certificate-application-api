@@ -6,6 +6,13 @@ import Boom from '@hapi/boom';
  *
  * Extracts the recipient id and updated data from the request body, delegates
  * the update to CertificateRecipientServices, and responds according to the outcome.
+ *
+ * This is a DIRECT edit of a record identified by id — it does NOT run
+ * the same-person check that `createOne` uses. Use this endpoint when an
+ * operator needs to correct a stored record (fix a typo, change a
+ * document type, etc.), not when a returning recipient needs their
+ * address refreshed.
+ *
  * The rotated JWT is provided via res.locals.newUserToken by authAppVerifyToken.
  *
  * @param {Object} req - The Express request object.
@@ -13,10 +20,11 @@ import Boom from '@hapi/boom';
  * @param {number|string} req.body.id - Identifier of the certificate recipient to update.
  * @param {string} req.body.firstName - Updated first name.
  * @param {string} [req.body.middleName] - Updated middle name (optional).
- * @param {string} req.body.lastName - Updated last name.
- * @param {string} [req.body.secondLastName] - Updated second last name (optional).
+ * @param {string} req.body.lastName - Updated first surname.
+ * @param {string} [req.body.secondLastName] - Updated second surname (optional).
  * @param {number|string} req.body.documentTypeId - Updated document type identifier.
  * @param {string} req.body.documentNumber - Updated document number.
+ * @param {string} req.body.relationship - Updated relationship to the student.
  * @param {string} req.body.address - Updated address.
  * @param {Object} res - The Express response object.
  * @param {string} res.locals.newUserToken - The rotated JWT set by authAppVerifyToken.
@@ -32,6 +40,7 @@ export const updateOneCertificateRecipient = async (req, res, next) => {
     secondLastName: req.body.secondLastName,
     documentTypeId: req.body.documentTypeId,
     documentNumber: req.body.documentNumber,
+    relationship: req.body.relationship,
     address: req.body.address,
   };
 
