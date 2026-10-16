@@ -3,7 +3,7 @@
 -- ============================================================================
 --   3 students · 3 enrollments each = 9 enrollments
 --   9 groups · 13 subjects · 117 scores (13 × 9)
---   5 phones · 9 certificates · 2 recipients
+--   5 phones · 2 certificate recipients
 --
 -- Three scoring scales exercised, one per student:
 --   • Juan Pérez      — 1–5 numeric (modern Colombian system, pass ≥ 3.0)
@@ -13,6 +13,12 @@
 -- Each enrollment has exactly one failing subject with a passing remedial.
 -- Every other subject passes with an empty remedial (`''` — the column is
 -- NOT NULL, so empty string is the "no remedial" sentinel).
+--
+-- ⚠ Certificates are NOT seeded here. They are now created through the API
+-- (POST /certificates/create), which writes to 'certificado' and links its
+-- enrollments through the 'certificado_matricula' bridge table inside a
+-- single transaction. Seeding them in raw SQL would require replicating
+-- the auto-generated act-number logic, so use the API instead.
 --
 -- ⚠ Run as ONE stream. See Section 7 for details.
 -- ============================================================================
@@ -474,65 +480,3 @@ JOIN receptor_certificado r ON rt.id_receptor_certificado = r.id_receptor_certif
 JOIN telefono t             ON rt.id_telefono             = t.id_telefono
 
 ORDER BY tipo_propietario, propietario;
-
-
--- ── 15. Certificates — 1 per enrollment = 9 total ───────────────────────────
-
-SET @usr_master = (SELECT id_usuario FROM usuario WHERE email_usuario = 'master.dev@test.local' LIMIT 1);
-
-INSERT IGNORE INTO certificado
-  (numero_acta_certificado,
-   fecha_emision_certificado,
-   id_usuario_certificado,
-   id_institucion_certificado,
-   id_matricula_certificado,
-   id_receptor_certificado,
-   estado_certificado)
-VALUES
-  -- Juan — 2020, 2021, 2022
-  ('20-001', '2020-11-30', @usr_master, @inst_id, @enr_juan_2020, @rec_carlos, 'EMITIDO'),
-  ('21-001', '2021-11-30', @usr_master, @inst_id, @enr_juan_2021, @rec_lucia,  'EMITIDO'),
-  ('22-001', '2022-11-30', @usr_master, @inst_id, @enr_juan_2022, @rec_carlos, 'EMITIDO'),
-
-  -- Mariana — 2022, 2023, 2024
-  ('22-002', '2022-11-30', @usr_master, @inst_id, @enr_mar_2022,  @rec_lucia,  'EMITIDO'),
-  ('23-001', '2023-11-30', @usr_master, @inst_id, @enr_mar_2023,  @rec_lucia,  'EMITIDO'),
-  ('24-001', '2024-11-30', @usr_master, @inst_id, @enr_mar_2024,  @rec_carlos, 'EMITIDO'),
-
-  -- Santiago — 2023, 2024, 2025
-  ('23-002', '2023-11-30', @usr_master, @inst_id, @enr_sant_2023, @rec_carlos, 'EMITIDO'),
-  ('24-002', '2024-11-30', @usr_master, @inst_id, @enr_sant_2024, @rec_lucia,  'EMITIDO'),
-  ('25-001', '2025-11-30', @usr_master, @inst_id, @enr_sant_2025, @rec_carlos, 'EMITIDO');
-
-
--- ── 16. Verification ────────────────────────────────────────────────────────
-
-SELECT c.numero_acta_certificado AS acta,
-       c.estado_certificado AS estado,
-       c.fecha_emision_certificado AS emitido,
-       CONCAT(e.primer_nombre_estudiante, ' ', e.primer_apellido_estudiante) AS estudiante,
-       gr.nombre_grado AS grado,
-       g.anio_grupo AS anio,
-       g.nombre_grupo AS grupo,
-       CONCAT(r.nombre_receptor_certificado, ' ', r.apellidos_receptor_certificado) AS receptor
-FROM certificado c
-JOIN matricula  m  ON c.id_matricula_certificado = m.id_matricula
-JOIN estudiante e  ON m.id_estudiante_matricula  = e.id_estudiante
-JOIN grupo      g  ON m.id_grupo_matricula       = g.id_grupo
-JOIN grado      gr ON g.id_grado_grupo           = gr.id_grado
-LEFT JOIN receptor_certificado r ON c.id_receptor_certificado = r.id_receptor_certificado
-ORDER BY c.numero_acta_certificado;
-
--- Expected output (9 rows):
---
--- acta   | estudiante       | grado     | anio | grupo
--- -------+------------------+-----------+------+-------
--- 20-001 | Juan Pérez       | Sexto     | 2020 | 6-A
--- 21-001 | Juan Pérez       | Séptimo   | 2021 | 7-A
--- 22-001 | Juan Pérez       | Octavo    | 2022 | 8-A
--- 22-002 | Mariana Osorio   | Séptimo   | 2022 | 7-B
--- 23-001 | Mariana Osorio   | Octavo    | 2023 | 8-B
--- 23-002 | Santiago Caicedo | Noveno    | 2023 | 9-B
--- 24-001 | Mariana Osorio   | Noveno    | 2024 | 9-A
--- 24-002 | Santiago Caicedo | Décimo    | 2024 | 10-A
--- 25-001 | Santiago Caicedo | Undécimo  | 2025 | 11-A
