@@ -444,22 +444,28 @@ export class EnrollmentServices {
   }
 
   /**
-   * Ensures an enrollment has no associated scores before allowing its
-   * deletion, since 'calificacion' references 'matricula' with
-   * onDelete: 'RESTRICT' at the database level.
+   * Ensures an enrollment is not currently linked to any certificate
+   * before allowing its deletion. This checks the bridge table
+   * 'certificado_matricula', whose id_matricula column references
+   * 'matricula' with onDelete: 'RESTRICT'. Because an enrollment may be
+   * certified multiple times, a single match here is enough to block the
+   * deletion — every certificate that references the enrollment must be
+   * removed first (or the enrollment preserved for historical integrity).
    *
    * @private
    * @param {number} enrollmentId
    * @throws {Boom}
    * @returns {Promise<void>}
    */
-  async _assertNoAssociatedScores(enrollmentId) {
-    const associatedScore = await Score.findOne({
+  async _assertNoAssociatedCertificate(enrollmentId) {
+    const associatedLink = await CertificateEnrollment.findOne({
       where: { enrollmentId }
     });
 
-    if (associatedScore) {
-      throw Boom.conflict('The enrollment cannot be deleted because it has associated scores');
+    if (associatedLink) {
+      throw Boom.conflict(
+        'The enrollment cannot be deleted because it is associated with one or more certificates'
+      );
     }
   }
 
