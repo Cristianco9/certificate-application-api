@@ -7,6 +7,7 @@ import {
   certificateRecipientLastName,
   certificateRecipientSecondLastName,
   certificateRecipientDocumentNumber,
+  certificateRecipientRelationship,
   certificateRecipientAddress,
   certificateRecipientDocumentTypeId,
 } from '../utils/RegEx/certificateRecipientRegEx.js';
@@ -32,7 +33,6 @@ const joiLastName = Joi.string().pattern(certificateRecipientLastName).messages(
   'string.pattern.base': 'Los apellidos del receptor deben tener entre 3 y 50 caracteres y contener solo letras.',
 });
 
-
 // Optional: empty string is allowed when the recipient has no second last name
 const joiSecondLastName = Joi.string().pattern(certificateRecipientSecondLastName).allow('').messages({
   'string.base': 'El segundo apellido del receptor debe ser una cadena de texto.',
@@ -42,6 +42,14 @@ const joiSecondLastName = Joi.string().pattern(certificateRecipientSecondLastNam
 const joiDocumentNumber = Joi.string().pattern(certificateRecipientDocumentNumber).messages({
   'string.base': 'El número de documento debe ser una cadena de texto.',
   'string.pattern.base': 'El número de documento debe tener entre 6 y 10 dígitos (cédula) o entre 6 y 20 caracteres alfanuméricos (pasaporte).',
+});
+
+// Relationship to the student. One of nine fixed values; part of the
+// critical identification set the service uses to decide whether a
+// returning recipient is the same person before refreshing their address.
+const joiRelationship = Joi.string().pattern(certificateRecipientRelationship).messages({
+  'string.base': 'El parentesco o relación debe ser una cadena de texto.',
+  'string.pattern.base': "El parentesco o relación debe ser uno de: Padre, Madre, Hermano(a), Tío(a), Abuelo(a), Primo(a), Cónyuge, Acudiente, Otro.",
 });
 
 const joiAddress = Joi.string().pattern(certificateRecipientAddress).messages({
@@ -76,7 +84,13 @@ export const certificateRecipientSchema = {
     documentTypeId: joiDocumentTypeId.required(),
   }),
 
-  // POST /create (body: { firstName, middleName?, lastName, secondLastName?, documentTypeId, documentNumber, address })
+  // POST /create (body: { firstName, middleName?, lastName, secondLastName?, documentTypeId, documentNumber, relationship, address })
+  //
+  // 'relationship' is part of the critical identification set. When a
+  // recipient with the same documentNumber already exists, the service
+  // compares this field (along with firstName, lastName, documentTypeId
+  // and documentNumber) to decide whether it is the same person and
+  // whether the address should be updated.
   newCertificateRecipientData: Joi.object({
     firstName: joiFirstName.required(),
     middleName: joiMiddleName.optional(),
@@ -84,10 +98,11 @@ export const certificateRecipientSchema = {
     secondLastName: joiSecondLastName.optional(),
     documentTypeId: joiDocumentTypeId.required(),
     documentNumber: joiDocumentNumber.required(),
+    relationship: joiRelationship.required(),
     address: joiAddress.required(),
   }),
 
-  // PATCH /update (body: { id, firstName?, middleName?, lastName?, secondLastName?, documentTypeId?, documentNumber?, address? })
+  // PATCH /update (body: { id, firstName?, middleName?, lastName?, secondLastName?, documentTypeId?, documentNumber?, relationship?, address? })
   updateCertificateRecipientData: Joi.object({
     id: joiId.required(),
     firstName: joiFirstName,
@@ -96,8 +111,9 @@ export const certificateRecipientSchema = {
     secondLastName: joiSecondLastName,
     documentTypeId: joiDocumentTypeId,
     documentNumber: joiDocumentNumber,
+    relationship: joiRelationship,
     address: joiAddress,
-  }).or('firstName', 'middleName', 'lastName', 'secondLastName', 'documentTypeId', 'documentNumber', 'address').messages({
+  }).or('firstName', 'middleName', 'lastName', 'secondLastName', 'documentTypeId', 'documentNumber', 'relationship', 'address').messages({
     'object.missing': 'Debe proporcionar al menos un campo para actualizar el receptor del certificado.',
   }),
 
