@@ -3,7 +3,7 @@
 -- ============================================================================
 --   3 students · 3 enrollments each = 9 enrollments
 --   9 groups · 13 subjects · 117 scores (13 × 9)
---   5 phones · 2 certificate recipients
+--   7 phones · 2 certificate recipients
 --
 -- Three scoring scales exercised, one per student:
 --   • Juan Pérez      — 1–5 numeric (modern Colombian system, pass ≥ 3.0)
@@ -13,6 +13,14 @@
 -- Each enrollment has exactly one failing subject with a passing remedial.
 -- Every other subject passes with an empty remedial (`''` — the column is
 -- NOT NULL, so empty string is the "no remedial" sentinel).
+--
+-- Phone ownership follows the cross-bridge single-owner rule the service
+-- layer enforces (see PhoneServices._assertPhoneIsUnowned): a given
+-- `telefono` row is linked through exactly ONE of the four bridge tables
+-- — usuario_telefono, estudiante_telefono, institucion_telefono,
+-- receptor_certificado_telefono — never more than one. Each actor in this
+-- seed therefore gets its own dedicated phones. If you add more actors,
+-- keep this invariant or the app will reject the data at runtime.
 --
 -- ⚠ Certificates are NOT seeded here. They are now created through the API
 -- (POST /certificates/create), which writes to 'certificado' and links its
@@ -401,31 +409,47 @@ ORDER BY e.id_estudiante, g.anio_grupo;
 
 
 -- ── 9. Phones (telefono) ────────────────────────────────────────────────────
+--
+-- Each actor owns its own phone. The cross-bridge single-owner rule the
+-- services enforce means a phone cannot be shared across owners (student,
+-- user, institution, recipient), so no number below appears more than
+-- once across Sections 11, 12 and 13.
 
 INSERT IGNORE INTO telefono (numero_telefono) VALUES
-  ('3001234567'),   -- Juan's mobile
-  ('3018765432'),   -- Mariana's mobile
-  ('3205551234'),   -- Santiago's mobile
+  ('3001234567'),   -- Juan's mobile (student)
+  ('3018765432'),   -- Mariana's mobile (student)
+  ('3205551234'),   -- Santiago's mobile (student)
   ('6028889900'),   -- institution main
-  ('6028889901');   -- institution alternate
+  ('6028889901'),   -- institution alternate
+  ('3151112233'),   -- Carlos's mobile (recipient)
+  ('3184445566');   -- Lucía's mobile (recipient)
 
 SET @tel_juan_mobile = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3001234567' LIMIT 1);
 SET @tel_mariana     = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3018765432' LIMIT 1);
 SET @tel_santiago    = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3205551234' LIMIT 1);
 SET @tel_inst_main   = (SELECT id_telefono FROM telefono WHERE numero_telefono = '6028889900' LIMIT 1);
 SET @tel_inst_alt    = (SELECT id_telefono FROM telefono WHERE numero_telefono = '6028889901' LIMIT 1);
+SET @tel_carlos      = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3151112233' LIMIT 1);
+SET @tel_lucia       = (SELECT id_telefono FROM telefono WHERE numero_telefono = '3184445566' LIMIT 1);
 
 
 -- ── 10. Certificate Recipients (receptor_certificado) ───────────────────────
+--
+-- `relacion_receptor_certificado` is part of the recipient's critical
+-- identification set: when the same document number returns years later,
+-- the service compares firstName + lastName + documentTypeId +
+-- documentNumber + relationship to decide whether it is the same person
+-- whose address should be refreshed (see
+-- CertificateRecipientServices._isSamePerson).
 
 INSERT IGNORE INTO receptor_certificado
   (nombre_receptor_certificado, segundo_nombre_receptor_certificado,
    apellidos_receptor_certificado, segundo_apellido_receptor_certificado,
    id_tipodocumento_receptor_certificado, identificacion_receptor_certificado,
-   direccion_receptor_certificado)
+   relacion_receptor_certificado, direccion_receptor_certificado)
 VALUES
-  ('Carlos', 'Andrés', 'Pérez',    'Gómez',    @dt_cc, '16345678', 'Calle 5 # 4-32 Barrio Centro'),
-  ('Lucía',  NULL,     'Rodríguez', 'Vargas',  @dt_cc, '52456789', 'Carrera 15 # 8-45 Barrio Granada');
+  ('Carlos', 'Andrés', 'Pérez',    'Gómez',   @dt_cc, '16345678', 'Padre', 'Calle 5 # 4-32 Barrio Centro'),
+  ('Lucía',  NULL,     'Rodríguez', 'Vargas',  @dt_cc, '52456789', 'Madre', 'Carrera 15 # 8-45 Barrio Granada');
 
 SET @rec_carlos = (SELECT id_receptor_certificado FROM receptor_certificado WHERE identificacion_receptor_certificado = '16345678' LIMIT 1);
 SET @rec_lucia  = (SELECT id_receptor_certificado FROM receptor_certificado WHERE identificacion_receptor_certificado = '52456789' LIMIT 1);
@@ -447,11 +471,17 @@ INSERT IGNORE INTO institucion_telefono (id_institucion, id_telefono) VALUES
 
 
 -- ── 13. CertificateRecipient-Phone links ───────────────────────────────────
+--
+-- Each recipient is linked to their own dedicated phone (see Section 9).
+-- Sharing a phone across bridges (e.g. linking Carlos to Juan's mobile)
+-- would violate the cross-bridge single-owner rule that PhoneServices and
+-- the four ownership bridge services enforce at runtime, even though the
+-- raw SQL schema permits it.
 
 INSERT IGNORE INTO receptor_certificado_telefono
   (id_receptor_certificado, id_telefono) VALUES
-  (@rec_carlos, @tel_juan_mobile),
-  (@rec_lucia,  @tel_mariana);
+  (@rec_carlos, @tel_carlos),
+  (@rec_lucia,  @tel_lucia);
 
 
 -- ── 14. Summary Query — Phone Ownership ────────────────────────────────────
