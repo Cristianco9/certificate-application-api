@@ -26,6 +26,7 @@ import institutionPhoneRouter from "./institutionPhoneRouter.js";
 import studentPhoneRouter from "./studentPhoneRouter.js";
 import certificateRecipientPhoneRouter from "./certificateRecipientPhoneRouter.js";
 import certificateSignatureRouter from './certificateSignatureRouter.js';
+import certificateEnrollmentRouter from './certificateEnrollmentRouter.js';
 
 
 
@@ -63,6 +64,7 @@ const routerApi = (api) => {
   router.use('/student-phones', studentPhoneRouter);
   router.use('/certificate-recipient-phones', certificateRecipientPhoneRouter);
   router.use('/certificate-signatures', certificateSignatureRouter);
+  router.use('/certificate-enrollments', certificateEnrollmentRouter);
 }
 
 // Export the routerApi function for use in other parts of the application
