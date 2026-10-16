@@ -9,11 +9,41 @@ import Boom from '@hapi/boom';
  * Handles CRUD, search, and referential guards. Read operations embed
  * the related DocumentType as a nested { id, name } object instead of
  * the raw foreign key.
+ *
+ * RE-REGISTRATION RULE
+ * ────────────────────
+ * The same physical person may return to the institution months or
+ * years later to request a new certificate for a different student
+ * (or the same student again after losing the original document).
+ * `createOne` therefore behaves as an idempotent "upsert-by-identity":
+ *
+ *   1. Look up an existing recipient by `documentNumber` (UNIQUE).
+ *   2. If none exists → insert a fresh record.
+ *   3. If one exists, verify it belongs to the same person by comparing
+ *      the CRITICAL fields:
+ *        • firstName
+ *        • lastName (first surname)
+ *        • documentTypeId
+ *        • documentNumber
+ *        • relationship
+ *      Text comparison is case- and diacritic-insensitive, so 'María'
+ *      matches 'MARIA'.
+ *   4. On match → update only `address` when it differs, and backfill
+ *      `relationship` if the existing row predates the column (NULL
+ *      wildcard). Everything else is preserved verbatim: the point of
+ *      the rule is that the same person keeps their identity, only
+ *      their contact information moves with them.
+ *   5. On mismatch → reject with Boom.conflict so the operator can
+ *      verify the input. Two records with the same documentNumber
+ *      cannot coexist (UNIQUE) and silently overwriting the identity
+ *      of a stored recipient would break historical integrity.
  */
 export class CertificateRecipientServices {
 
   /**
-   * Creates a new certificate recipient.
+   * Creates a new certificate recipient, or — if a record with the same
+   * document number already exists and its critical fields match —
+   * updates that record's address (and backfills a missing relationship).
    *
    * @param {Object} newCertificateRecipient
    * @param {string} newCertificateRecipient.firstName
@@ -22,6 +52,7 @@ export class CertificateRecipientServices {
    * @param {string} [newCertificateRecipient.secondLastName]
    * @param {number|string} newCertificateRecipient.documentTypeId
    * @param {string} newCertificateRecipient.documentNumber
+   * @param {string} newCertificateRecipient.relationship
    * @param {string} newCertificateRecipient.address
    * @returns {Promise<{status: string}>}
    */
@@ -32,10 +63,55 @@ export class CertificateRecipientServices {
       await this._assertExists(DocumentType, normalized.documentTypeId, 'DocumentType');
 
       const existingByDocument = await this._findByDocumentNumber(normalized.documentNumber);
+
       if (existingByDocument) {
-        throw Boom.conflict('A certificate recipient with the provided document number already exists');
+        // ── Same person? ──────────────────────────────────────────────
+        const samePerson = CertificateRecipientServices._isSamePerson(
+          existingByDocument,
+          normalized
+        );
+
+        if (!samePerson) {
+          throw Boom.conflict(
+            'Ya existe un receptor del certificado con el mismo número de documento, ' +
+            'pero sus datos de identificación no coinciden (nombre, primer apellido, ' +
+            'tipo de documento o parentesco). Verifica la información ingresada.'
+          );
+        }
+
+        // ── Same person — update address (and backfill relationship) ──
+        const updateData = {};
+
+        // Address — only touch it if the incoming value is present and
+        // actually different, so we don't churn rows on a no-op submit.
+        if (
+          normalized.address !== undefined &&
+          normalized.address !== null &&
+          existingByDocument.address !== normalized.address
+        ) {
+          updateData.address = normalized.address;
+        }
+
+        // Legacy backfill — records created before the column existed
+        // carry NULL and are upgraded on the first re-registration.
+        if (
+          (existingByDocument.relationship === null ||
+            existingByDocument.relationship === undefined) &&
+          normalized.relationship
+        ) {
+          updateData.relationship = normalized.relationship;
+        }
+
+        if (Object.keys(updateData).length > 0) {
+          await CertificateRecipient.update(updateData, {
+            where: { id: existingByDocument.id },
+          });
+        }
+
+        return { status: 'UPDATED SUCCESSFULLY' };
       }
 
+      // ── No existing record — insert a new one ────────────────────────
       await CertificateRecipient.create({
         firstName: normalized.firstName,
         middleName: normalized.middleName,
@@ -43,6 +119,7 @@ export class CertificateRecipientServices {
         secondLastName: normalized.secondLastName,
         documentTypeId: normalized.documentTypeId,
         documentNumber: normalized.documentNumber,
+        relationship: normalized.relationship,
         address: normalized.address,
       });
 
@@ -55,6 +132,12 @@ export class CertificateRecipientServices {
 
   /**
    * Updates an existing certificate recipient.
+   *
+   * NOTE: this is a direct edit of a record identified by id — it does
+   * NOT run the same-person check. That check belongs to `createOne`
+   * and only exists to arbitrate the "already registered, coming back"
+   * flow. Use this endpoint when an admin needs to correct a stored
+   * record.
    *
    * @param {number|string} certificateRecipientId
    * @param {Object} newCertificateRecipientData
@@ -91,6 +174,7 @@ export class CertificateRecipientServices {
       if (normalized.secondLastName !== undefined) updateData.secondLastName = normalized.secondLastName;
       if (normalized.documentTypeId !== undefined) updateData.documentTypeId = normalized.documentTypeId;
       if (normalized.documentNumber !== undefined) updateData.documentNumber = normalized.documentNumber;
+      if (normalized.relationship !== undefined) updateData.relationship = normalized.relationship;
       if (normalized.address !== undefined) updateData.address = normalized.address;
 
       const [updatedRows] = await CertificateRecipient.update(updateData, {
@@ -175,9 +259,7 @@ export class CertificateRecipientServices {
   /**
    * Retrieves all certificate recipients ordered by last name and first name.
    *
-   * @returns {Promise<{total: number, records: Object[]}>} An object
-   * containing the count of records returned by this request and the list
-   * itself, so the controller can surface `total` alongside the collection.
+   * @returns {Promise<{total: number, records: Object[]}>}
    */
   async listAll() {
     try {
@@ -200,8 +282,7 @@ export class CertificateRecipientServices {
    * last name partially matches the given text.
    *
    * @param {string} partialName
-   * @returns {Promise<{total: number, records: Object[]}>} An object
-   * containing the count of matching records and the list itself.
+   * @returns {Promise<{total: number, records: Object[]}>}
    */
   async listByPartialName(partialName) {
     if (!partialName) {
@@ -263,8 +344,7 @@ export class CertificateRecipientServices {
    * Retrieves all certificate recipients matching a given document type.
    *
    * @param {number|string} documentTypeId
-   * @returns {Promise<{total: number, records: Object[]}>} An object
-   * containing the count of matching records and the list itself.
+   * @returns {Promise<{total: number, records: Object[]}>}
    */
   async listByDocumentType(documentTypeId) {
     if (!documentTypeId) {
@@ -286,6 +366,7 @@ export class CertificateRecipientServices {
       throw Boom.boomify(error, { message: 'Unable to find certificate recipients for the given document type' });
     }
   }
+
   // Private helpers
 
   async _findById(certificateRecipientId) {
@@ -343,9 +424,77 @@ export class CertificateRecipientServices {
     if (data.lastName !== undefined) normalized.lastName = normalizeString(data.lastName);
     if (data.secondLastName !== undefined) normalized.secondLastName = normalizeString(data.secondLastName);
     if (data.documentNumber !== undefined) normalized.documentNumber = normalizeString(data.documentNumber);
+    if (data.relationship !== undefined) normalized.relationship = normalizeString(data.relationship);
     if (data.address !== undefined) normalized.address = normalizeString(data.address);
     if (data.documentTypeId !== undefined) normalized.documentTypeId = normalizeId(data.documentTypeId);
 
     return normalized;
+  }
+
+  /**
+   * Case-insensitive, diacritic-insensitive comparison for the text
+   * fields used by the same-person check. 'María' matches 'MARIA',
+   * 'Pérez' matches 'perez'. Nullish values normalize to '' so a
+   * missing field on either side is a clean comparison instead of
+   * throwing.
+   *
+   * @private
+   * @static
+   */
+  static _normalizeForComparison(value) {
+    if (value === null || value === undefined) return '';
+    return String(value)
+      .trim()
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '');
+  }
+
+  /**
+   * Decides whether an existing recipient and the incoming payload
+   * describe the SAME person, based on the five critical fields:
+   * firstName, lastName, documentTypeId, documentNumber, relationship.
+   *
+   * Text fields are compared with `_normalizeForComparison` so casing
+   * and accents don't force a false mismatch. The `relationship` field
+   * is nullable on the existing side (legacy rows created before the
+   * column existed): a NULL is treated as a wildcard, letting the same
+   * person's record be upgraded on the next re-registration without
+   * forcing the operator to invent data.
+   *
+   * @private
+   * @static
+   * @param {CertificateRecipient} existing
+   * @param {Object} incoming - The normalized incoming payload.
+   * @returns {boolean}
+   */
+  static _isSamePerson(existing, incoming) {
+    const norm = CertificateRecipientServices._normalizeForComparison;
+
+    // firstName
+    if (norm(existing.firstName) !== norm(incoming.firstName)) return false;
+
+    // lastName (first surname) — 'apellidos_receptor_certificado'
+    if (norm(existing.lastName) !== norm(incoming.lastName)) return false;
+
+    // documentTypeId — numeric equality
+    if (Number(existing.documentTypeId) !== Number(incoming.documentTypeId)) return false;
+
+    // documentNumber
+    if (norm(existing.documentNumber) !== norm(incoming.documentNumber)) return false;
+
+    // relationship — NULL on the existing side is a wildcard; otherwise
+    // an exact match is required.
+    const existingRelationship = existing.relationship;
+    const incomingRelationship = incoming.relationship;
+
+    const existingHasRelationship =
+      existingRelationship !== null && existingRelationship !== undefined;
+
+    if (existingHasRelationship && incomingRelationship !== undefined && incomingRelationship !== null) {
+      if (existingRelationship !== incomingRelationship) return false;
+    }
+
+    return true;
   }
 }
