@@ -394,13 +394,19 @@ export function setupAssociations() {
     as: 'recipient',
   });
 
-  // ============================================================
+// ============================================================
   // CERTIFICATE ↔ ENROLLMENT (many-to-many via bridge)
   //
   // Business rules enforced by the bridge table 'certificado_matricula':
   //   • A certificate can carry MANY enrollments (one PDF, N report cards).
-  //   • An enrollment can belong to AT MOST ONE certificate — enforced
-  //     by the UNIQUE index on bridge.id_matricula.
+  //   • An enrollment may be certified ANY number of times — the same
+  //     enrollment can appear in many different certificates. Each
+  //     issuance is a distinct legal document with its own act number
+  //     and issue date (there is no "reprint" — a fresh certificate is
+  //     generated when the recipient loses the original).
+  //   • The only uniqueness enforced on the bridge is the composite
+  //     (id_certificado, id_matricula) pair — a single certificate
+  //     cannot link the same enrollment twice.
   // ============================================================
 
   // A certificate covers many enrollments (through the junction table)

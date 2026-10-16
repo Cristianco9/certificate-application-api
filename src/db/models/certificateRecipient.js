@@ -33,13 +33,13 @@ export const CertificateRecipient = sequelize.define(CERTIFICATE_RECIPIENT_TABLE
     allowNull: true,
     field: 'segundo_nombre_receptor_certificado',
   },
-  // Recipient last name
+  // Recipient first surname
   lastName: {
     type: DataTypes.STRING(50),
     allowNull: false,
     field: 'apellidos_receptor_certificado',
   },
-  // Recipient second last name (optional)
+  // Recipient second surname (optional)
   secondLastName: {
     type: DataTypes.STRING(50),
     allowNull: true,
@@ -55,12 +55,39 @@ export const CertificateRecipient = sequelize.define(CERTIFICATE_RECIPIENT_TABLE
       key: 'id_tipo_documento',
     },
   },
-  // Document number
+  // Document number — UNIQUE across all recipients
   documentNumber: {
     type: DataTypes.STRING(20),
     allowNull: false,
     unique: true,
     field: 'identificacion_receptor_certificado',
+  },
+  // Relationship to the student at delivery time.
+  //
+  // One of: 'Padre', 'Madre', 'Hermano(a)', 'Tío(a)', 'Abuelo(a)',
+  // 'Primo(a)', 'Cónyuge', 'Acudiente', 'Otro'.
+  //
+  // Critical identification field: the same-person check in
+  // CertificateRecipientServices compares this alongside firstName,
+  // lastName, documentTypeId and documentNumber.
+  //
+  // Nullable to preserve rows created before the column existed. The
+  // service treats NULL as a wildcard and backfills the value on the
+  // next re-registration.
+  relationship: {
+    type: DataTypes.ENUM(
+      'Padre',
+      'Madre',
+      'Hermano(a)',
+      'Tío(a)',
+      'Abuelo(a)',
+      'Primo(a)',
+      'Cónyuge',
+      'Acudiente',
+      'Otro'
+    ),
+    allowNull: true,
+    field: 'relacion_receptor_certificado',
   },
   // Recipient address
   address: {
