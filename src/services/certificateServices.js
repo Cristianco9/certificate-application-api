@@ -24,6 +24,15 @@ export class CertificateServices {
    * the same transaction that creates the certificate row, so either
    * the whole group is committed or nothing is.
    *
+   * RE-ISSUANCE IS EXPECTED: the same student, the same enrollments,
+   * the same recipient, the same institution and the same signers may
+   * be submitted any number of times. Each call produces a NEW
+   * certificate row with a NEW act number and a NEW issue date. There
+   * is no "reprint" concept — every request is a fresh issuance. The
+   * bridge only enforces UNIQUE on the composite
+   * (certificateId, enrollmentId) pair, so an enrollment can appear in
+   * many certificates.
+   *
    * @param {Object} newCertificate
    * @param {string|Date} newCertificate.issueDate
    * @param {number|string} newCertificate.userId
@@ -57,9 +66,6 @@ export class CertificateServices {
           'CertificateRecipient'
         );
       }
-
-      // No enrollment may already belong to another certificate
-      await this._assertEnrollmentsAreFree(enrollmentIds);
 
       // Retry loop around act-number collision
       const MAX_ATTEMPTS = 5;
@@ -100,18 +106,16 @@ export class CertificateServices {
         } catch (insertError) {
           await transaction.rollback();
 
-          // Retry ONLY on act-number collision
+          // Retry ONLY on act-number collision. The bridge's composite
+          // unique (certificateId, enrollmentId) cannot collide here,
+          // because enrollmentIds are already guaranteed unique within
+          // this request (see _normalizeEnrollmentIds), and the
+          // certificate id is brand new on each attempt.
           if (insertError.name === 'SequelizeUniqueConstraintError') {
             const fields = insertError.fields ?? {};
 
             if (Object.prototype.hasOwnProperty.call(fields, 'numero_acta_certificado')) {
               continue; // pick a new act number and retry
-            }
-
-            // A bridge-row collision means an enrollment got claimed in
-            // a concurrent request; not retryable.
-            if (Object.prototype.hasOwnProperty.call(fields, 'id_matricula')) {
-              throw Boom.conflict('One of the provided enrollments is already linked to a certificate');
             }
           }
 
@@ -266,19 +270,62 @@ export class CertificateServices {
   }
 
   /**
-   * Given an enrollmentId, return the certificate (if any) that owns it.
-   * Backed by the UNIQUE index on bridge.id_matricula, so at most one
-   * certificate can be returned.
+   * Given an enrollmentId, return the certificate that most recently
+   * certified it — the highest certificateId among all issuances.
+   *
+   * The bridge no longer enforces UNIQUE on id_matricula, so an
+   * enrollment may appear in many certificates (one per issuance). This
+   * method returns the LATEST one, which is what callers mean by
+   * "the certificate for this enrollment". To enumerate every issuance,
+   * use listByEnrollment.
    */
   async getByEnrollment(enrollmentId) {
     if (!enrollmentId) throw Boom.badRequest('No enrollment identifier was provided');
 
     try {
-      const link = await CertificateEnrollment.findOne({ where: { enrollmentId } });
-      if (!link) throw Boom.notFound('No certificate was found for the provided enrollment');
+      const link = await CertificateEnrollment.findOne({
+        where: { enrollmentId },
+        order: [['certificateId', 'DESC']],
+      });
+
+      if (!link) {
+        throw Boom.notFound('No certificate was found for the provided enrollment');
+      }
+
       return await this.listOne(link.certificateId);
     } catch (error) {
-      throw Boom.boomify(error, { message: 'Unable to find the certificate for the given enrollment' });
+      throw Boom.boomify(error, {
+        message: 'Unable to find the certificate for the given enrollment',
+      });
+    }
+  }
+
+  /**
+   * Given an enrollmentId, return EVERY certificate that has ever
+   * certified it, ordered from newest to oldest.
+   *
+   * Each row is a distinct legal document issued at a different moment,
+   * all carrying identical content (student, enrollments, recipient,
+   * institution, signers). Only the act number and the issue date differ.
+   */
+  async listByEnrollment(enrollmentId) {
+    if (!enrollmentId) throw Boom.badRequest('No enrollment identifier was provided');
+
+    try {
+      const links = await CertificateEnrollment.findAll({
+        where: { enrollmentId },
+        order: [['certificateId', 'DESC']],
+      });
+
+      const records = await Promise.all(
+        links.map((link) => this.listOne(link.certificateId))
+      );
+
+      return { total: records.length, records };
+    } catch (error) {
+      throw Boom.boomify(error, {
+        message: 'Unable to list the certificates for the given enrollment',
+      });
     }
   }
 
@@ -367,8 +414,9 @@ export class CertificateServices {
 
   /**
    * Rejects an array that is empty, non-array, or contains duplicates.
-   * Duplicates would make the bridge insert fail on the unique index
-   * with a raw ORM error, so we surface a clear Boom.badRequest instead.
+   * Duplicates would make the bridge insert fail on the composite unique
+   * index with a raw ORM error, so we surface a clear Boom.badRequest
+   * instead.
    */
   static _normalizeEnrollmentIds(raw) {
     if (!Array.isArray(raw) || raw.length === 0) {
@@ -386,23 +434,6 @@ export class CertificateServices {
     }
 
     return ids;
-  }
-
-  /**
-   * Rejects the request if ANY of the requested enrollments is already
-   * linked to a certificate — mirrors the UNIQUE index on bridge.id_matricula.
-   */
-  async _assertEnrollmentsAreFree(enrollmentIds) {
-    const existingLinks = await CertificateEnrollment.findAll({
-      where: { enrollmentId: { [Op.in]: enrollmentIds } },
-    });
-
-    if (existingLinks.length > 0) {
-      const alreadyUsed = existingLinks.map((l) => l.enrollmentId).join(', ');
-      throw Boom.conflict(
-        `The following enrollments are already linked to a certificate: ${alreadyUsed}`
-      );
-    }
   }
 
   async _assertNoAssociatedSignatures(certificateId) {
@@ -465,7 +496,7 @@ export class CertificateServices {
     attributes: ['id', 'name', 'institutionalCode'],
   };
 
-  // Now a to-many include; `through.attributes: []` hides the bridge
+  // A to-many include; `through.attributes: []` hides the bridge
   // columns so the client only sees real enrollment fields.
   static ENROLLMENTS_INCLUDE = {
     model: Enrollment,
@@ -496,7 +527,7 @@ export class CertificateServices {
   static CATALOG_INCLUDES = [
     CertificateServices.USER_INCLUDE,
     CertificateServices.INSTITUTION_INCLUDE,
-    CertificateServices.ENROLLMENTS_INCLUDE,   // ← renamed
+    CertificateServices.ENROLLMENTS_INCLUDE,
     CertificateServices.RECIPIENT_INCLUDE,
   ];
 
@@ -516,7 +547,7 @@ export class CertificateServices {
       ...rest,
       issuer: issuer ?? null,
       institution: institution ?? null,
-      enrollments: enrollments ?? [],   // ← was singular `enrollment`
+      enrollments: enrollments ?? [],
       recipient: recipient ?? null,
     };
   }
