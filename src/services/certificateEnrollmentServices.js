@@ -25,11 +25,14 @@ import Boom from '@hapi/boom';
  *
  *   1. A certificate can carry MANY enrollments — so 'listByCertificate'
  *      returns a collection.
- *   2. An enrollment can belong to AT MOST ONE certificate — the
- *      'id_matricula' column carries a UNIQUE index. This is enforced here
- *      explicitly via _assertEnrollmentIsAvailable before any write, so a
- *      conflict surfaces a clear Boom.conflict instead of the raw ORM
- *      unique-constraint error.
+ *
+ *   2. An enrollment may be certified ANY number of times — the same
+ *      enrollment can appear in many different certificates. Each
+ *      issuance is a distinct legal document with its own act number
+ *      and issue date; there is no "reprint" operation. The only
+ *      uniqueness enforced on the bridge is the composite
+ *      (certificateId, enrollmentId) pair — a single certificate cannot
+ *      link the same enrollment twice.
  *
  * The certificate-issuance workflow (CertificateServices.createOne) links
  * every enrollment of a new certificate through this same table inside a
@@ -73,7 +76,8 @@ export class CertificateEnrollmentServices {
       );
 
       // Verify this exact link does not already exist, mirroring the
-      // composite uniqueness of (certificateId, enrollmentId)
+      // composite uniqueness of (certificateId, enrollmentId) — the ONLY
+      // uniqueness enforced on this bridge.
       const existingLink = await this._findByCertificateAndEnrollment(
         newCertificateEnrollment.certificateId,
         newCertificateEnrollment.enrollmentId
@@ -82,13 +86,6 @@ export class CertificateEnrollmentServices {
       if (existingLink) {
         throw Boom.conflict('The enrollment is already linked to the provided certificate');
       }
-
-      // Enforce the single-certificate rule: enrollmentId is UNIQUE, so
-      // the enrollment must not already be linked to ANY other certificate
-      await this._assertEnrollmentIsAvailable(
-        newCertificateEnrollment.enrollmentId,
-        newCertificateEnrollment.certificateId
-      );
 
       // Create the record (id is generated automatically)
       await CertificateEnrollment.create({
@@ -277,9 +274,8 @@ export class CertificateEnrollmentServices {
   /**
    * Retrieves every CertificateEnrollment record referencing a given
    * enrollment, each with its related certificate embedded as a nested
-   * object. In practice this returns at most one record, since the
-   * 'id_matricula' column is UNIQUE — an enrollment belongs to at most
-   * one certificate.
+   * object. Returns one record per issuance — the same enrollment may
+   * appear in many different certificates, each with its own act number.
    *
    * @param {number|string} enrollmentId
    * @returns {Promise<{total: number, records: Object[]}>}
@@ -313,8 +309,8 @@ export class CertificateEnrollmentServices {
   /**
    * Retrieves the single CertificateEnrollment record (if any) linking a
    * specific certificate to a specific enrollment. Useful to check
-   * whether an enrollment is already owned by a certificate before
-   * attempting a new link.
+   * whether an enrollment is already linked to the given certificate
+   * before attempting a new link.
    *
    * @param {number|string} certificateId
    * @param {number|string} enrollmentId
@@ -397,34 +393,6 @@ export class CertificateEnrollmentServices {
 
     if (!record) {
       throw Boom.notFound(`${name} with id ${id} does not exist`);
-    }
-  }
-
-  /**
-   * Enforces the UNIQUE constraint on 'id_matricula' at the service
-   * layer: an enrollment may only ever be linked to ONE certificate.
-   * Since createOne has already ruled out a duplicate link to the SAME
-   * certificate, any link found here means the enrollment belongs to a
-   * different certificate entirely.
-   *
-   * @private
-   * @param {number|string} enrollmentId - The enrollment being linked.
-   * @param {number|string} requestingCertificateId - The certificate requesting the link.
-   * @throws {Boom} - A conflict error naming the existing certificate.
-   * @returns {Promise<void>}
-   */
-  async _assertEnrollmentIsAvailable(enrollmentId, requestingCertificateId) {
-    const existingLink = await CertificateEnrollment.findOne({
-      where: { enrollmentId }
-    });
-
-    if (
-      existingLink &&
-      Number(existingLink.certificateId) !== Number(requestingCertificateId)
-    ) {
-      throw Boom.conflict(
-        `The enrollment is already linked to certificate id ${existingLink.certificateId}`
-      );
     }
   }
 
