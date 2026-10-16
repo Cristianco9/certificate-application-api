@@ -30,13 +30,13 @@ module.exports = {
         allowNull: true,
       },
 
-      // Recipient last name
+      // Recipient first surname
       apellidos_receptor_certificado: {
         type: Sequelize.STRING(50),
         allowNull: false,
       },
 
-      // Recipient second last name (optional)
+      // Recipient second surname (optional)
       segundo_apellido_receptor_certificado: {
         type: Sequelize.STRING(50),
         allowNull: true,
@@ -54,14 +54,48 @@ module.exports = {
         onUpdate: 'CASCADE',
       },
 
-      // Document number
+      // Document number — UNIQUE. Two recipients cannot share a document
+      // number; the same document number is the trigger for the
+      // same-person check applied by CertificateRecipientServices.createOne.
       identificacion_receptor_certificado: {
         type: Sequelize.STRING(20),
         allowNull: false,
         unique: true,
       },
 
-      // Recipient address
+      // Relationship to the student at delivery time.
+      //
+      // One of: 'Padre', 'Madre', 'Hermano(a)', 'Tío(a)', 'Abuelo(a)',
+      // 'Primo(a)', 'Cónyuge', 'Acudiente', 'Otro'.
+      //
+      // Treated as a CRITICAL identification field: when a recipient
+      // returns months or years later to request a new certificate, the
+      // service compares this value — along with firstName, lastName,
+      // documentTypeId and documentNumber — to confirm the record
+      // belongs to the same person before refreshing their address.
+      //
+      // Nullable on purpose: existing rows created before the column
+      // existed get NULL rather than a fabricated default. The service
+      // treats NULL as a wildcard and backfills the value on the next
+      // re-registration.
+      relacion_receptor_certificado: {
+        type: Sequelize.ENUM(
+          'Padre',
+          'Madre',
+          'Hermano(a)',
+          'Tío(a)',
+          'Abuelo(a)',
+          'Primo(a)',
+          'Cónyuge',
+          'Acudiente',
+          'Otro'
+        ),
+        allowNull: true,
+      },
+
+      // Recipient address. Overwritten in place when the same person
+      // returns with a different address — the point of the
+      // same-person check is that only contact information moves.
       direccion_receptor_certificado: {
         type: Sequelize.STRING(120),
         allowNull: false,
