@@ -4,7 +4,7 @@ import { Enrollment } from '../db/models/enrollment.js';
 import { Student } from '../db/models/student.js';
 import { Group } from '../db/models/group.js';
 // Import the models that reference Enrollment, needed to enforce the delete-guard business rules
-import { Certificate } from '../db/models/certificate.js';
+import { CertificateEnrollment } from '../db/models/certificateEnrollment.js';
 import { Score } from '../db/models/score.js';
 // Boom allows managing possible errors with HTTP-friendly error objects
 import Boom from '@hapi/boom';
@@ -37,11 +37,13 @@ import Boom from '@hapi/boom';
  * so a duplicate enrollment surfaces a clear Boom.conflict instead of
  * the raw ORM unique-constraint error.
  *
- * 'certificado' and 'calificacion' both reference 'matricula' with
- * onDelete: 'RESTRICT' — a certificate can only ever be issued once per
- * enrollment (context.md: reprints reuse the same certificate record),
- * and scores belong to the academic history tied to the enrollment.
- * The deletion guard below checks both.
+ * A certificate is now linked to an enrollment through the bridge table
+ * 'certificado_matricula' (see CertificateEnrollment), NOT through a
+ * direct FK on 'certificado' anymore. The bridge's id_matricula column
+ * is UNIQUE, so an enrollment can belong to at most one certificate.
+ * 'calificacion' references 'matricula' with onDelete: 'RESTRICT' —
+ * scores belong to the academic history tied to the enrollment. The
+ * deletion guard below checks both.
  *
  * Every method that returns an Enrollment record (listOne, listAll,
  * listByStudent, listByGroup, getByStudentAndGroup) embeds its related
@@ -189,9 +191,9 @@ export class EnrollmentServices {
         throw Boom.notFound('Enrollment not found');
       }
 
-      // Prevent deletion if the enrollment still has an associated
-      // certificate or scores, giving a clearer error than the raw
-      // RESTRICT constraint from MySQL
+      // Prevent deletion if the enrollment is still linked to a
+      // certificate (via the bridge table) or has scores, giving a
+      // clearer error than the raw RESTRICT constraint from MySQL
       await this._assertNoAssociatedCertificate(enrollmentId);
       await this._assertNoAssociatedScores(enrollmentId);
 
@@ -419,11 +421,12 @@ export class EnrollmentServices {
   }
 
   /**
-   * Ensures an enrollment has no associated certificate before allowing
-   * its deletion, since 'certificado' references 'matricula' with
-   * onDelete: 'RESTRICT' at the database level (and enrollmentId is
-   * unique on Certificate — a reprint reuses the existing record rather
-   * than creating a new one, per context.md).
+   * Ensures an enrollment is not currently linked to any certificate
+   * before allowing its deletion. This checks the bridge table
+   * 'certificado_matricula' (whose id_matricula column is UNIQUE and
+   * references 'matricula' with onDelete: 'RESTRICT'), not a direct FK
+   * on 'certificado' — the certificate now carries N enrollments
+   * through this bridge rather than a single enrollmentId column.
    *
    * @private
    * @param {number} enrollmentId
@@ -431,12 +434,12 @@ export class EnrollmentServices {
    * @returns {Promise<void>}
    */
   async _assertNoAssociatedCertificate(enrollmentId) {
-    const associatedCertificate = await Certificate.findOne({
+    const associatedLink = await CertificateEnrollment.findOne({
       where: { enrollmentId }
     });
 
-    if (associatedCertificate) {
-      throw Boom.conflict('The enrollment cannot be deleted because it has an associated certificate');
+    if (associatedLink) {
+      throw Boom.conflict('The enrollment cannot be deleted because it is associated with a certificate');
     }
   }
 
